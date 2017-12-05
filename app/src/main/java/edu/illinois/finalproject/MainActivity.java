@@ -8,7 +8,6 @@ import android.view.View;
 import android.widget.Button;
 
 public class MainActivity extends AppCompatActivity {
-    private Camera camera;
     private ImageHandler imageHandler;
 
     private Button startTripButton;
@@ -25,14 +24,6 @@ public class MainActivity extends AppCompatActivity {
 
         startTripButton = (Button)findViewById(R.id.startTripButton);
     }
-
-//    @Override
-//    protected void onPause() {
-//        super.onPause();
-//        if (camera.cameraDevice != null) {
-//            camera.cameraDevice.close();
-//        }
-//    }
 
     public void onStartTripClicked(View view) {
         Intent intent = new Intent(this, TripActivity.class);

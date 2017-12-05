@@ -25,11 +25,10 @@
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity>
-
-        <activity android:name=".TripActivity"
-                  android:label="@string/title_activity_trip">
+        <activity
+            android:name=".TripActivity"
+            android:label="@string/title_activity_trip">
         </activity>
-
         <activity
             android:name=".SettingsActivity"
             android:label="@string/title_activity_settings">
@@ -44,6 +43,13 @@
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/file_paths"/>
         </provider>
+
+        <meta-data
+            android:name="preloaded_fonts"
+            android:resource="@array/preloaded_fonts"/>
+
+        <activity android:name=".LinkAccountActivity">
+        </activity>
     </application>
 
 </manifest>
