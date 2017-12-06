@@ -75,4 +75,5 @@
 
     <string name="pref_title_vibrate">Vibrate</string>
     <string name="title_activity_link_account">LinkAccountActivity</string>
+    <string name="title_link_account">Link Account</string>
 </resources>
