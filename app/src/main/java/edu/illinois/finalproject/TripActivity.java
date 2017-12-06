@@ -1,57 +1,33 @@
 package edu.illinois.finalproject;
 
 import android.Manifest;
-import android.content.Context;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
-import android.graphics.ImageFormat;
-import android.graphics.SurfaceTexture;
-import android.hardware.camera2.CameraCaptureSession;
-import android.hardware.camera2.CameraCharacteristics;
 import android.hardware.camera2.CameraDevice;
-import android.hardware.camera2.CameraManager;
-import android.hardware.camera2.CameraMetadata;
-import android.hardware.camera2.CaptureRequest;
-import android.hardware.camera2.TotalCaptureResult;
-import android.hardware.camera2.params.StreamConfigurationMap;
-import android.media.Image;
-import android.media.ImageReader;
+import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Environment;
-import android.os.Handler;
-import android.os.HandlerThread;
 import android.provider.MediaStore;
+import android.provider.Settings;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
-import android.util.Size;
 import android.util.SparseArray;
-import android.util.SparseIntArray;
-import android.view.Surface;
 import android.view.TextureView;
 import android.view.View;
-import android.view.Window;
-import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.ImageView;
 
 import com.google.android.gms.vision.Frame;
 import com.google.android.gms.vision.face.Face;
 import com.google.android.gms.vision.face.FaceDetector;
-import com.google.android.gms.vision.face.Landmark;
 
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.OutputStream;
-import java.nio.ByteBuffer;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Date;
-import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -60,48 +36,17 @@ public class TripActivity extends AppCompatActivity {
 
     public Bitmap imageBitmap;
     public String photoFilePath;
+    private TextureView textureView;
     private ImageView imageView;
-
     public Uri photoUri;
 
     private Timer imageTimer;
-
-    private Size previewSize;
-    private Size[] jpegSizes = null;
-    private TextureView textureView;
-    private CameraDevice cameraDevice;
-    private CaptureRequest.Builder previewBuilder;
-    private CameraCaptureSession previewSession;
-    Button takePictureButton;
-    private static final SparseIntArray ORIENTATIONS = new SparseIntArray();
+    private CameraInterface cameraInterface;
 
     private FaceDetector detector;
+    private MediaPlayer mediaPlayer;
 
-    private TextureView.SurfaceTextureListener surfaceTextureListener = new TextureView.SurfaceTextureListener() {
-        @Override
-        public void onSurfaceTextureAvailable(SurfaceTexture surface, int width, int height) {
-            openCamera();
-        }
-        @Override
-        public void onSurfaceTextureSizeChanged(SurfaceTexture surface, int width, int height) {}
-        @Override
-        public boolean onSurfaceTextureDestroyed(SurfaceTexture surface) {
-            return false;
-        }
-        @Override
-        public void onSurfaceTextureUpdated(SurfaceTexture surface) {}
-    };
-    private CameraDevice.StateCallback stateCallback = new CameraDevice.StateCallback() {
-        @Override
-        public void onOpened(CameraDevice camera) {
-            cameraDevice = camera;
-            startCamera();
-        }
-        @Override
-        public void onDisconnected(CameraDevice camera) {}
-        @Override
-        public void onError(CameraDevice camera, int error) {}
-    };
+    private Button pauseTripButton, resumeTripButton, endTripButton;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -119,204 +64,32 @@ public class TripActivity extends AppCompatActivity {
         }
 
         textureView = (TextureView) findViewById(R.id.mainTextureView);
-        textureView.setSurfaceTextureListener(surfaceTextureListener);
-        imageView = (ImageView) findViewById(R.id.mainImageView);
+//        imageView = (ImageView) findViewById(R.id.mainImageView);
+        pauseTripButton = (Button) findViewById(R.id.pauseTripButton);
+        resumeTripButton = (Button) findViewById(R.id.resumeTripButton);
+        endTripButton = (Button) findViewById(R.id.endTripButton);
+
+        // Initializes camera interface and surface texture view that shows camera feed
+        cameraInterface = new CameraInterface(this, textureView);
+
+        // Initializes the media player to play sounds
+        mediaPlayer = MediaPlayer.create(this, Settings.System.DEFAULT_RINGTONE_URI);
 
         imageTimer = new Timer();
         imageTimer.scheduleAtFixedRate(new TimerTask() {
             @Override
             public void run() {
-                getPicture();
+                cameraInterface.getPicture();
             }
-        }, 0, 1000);
-    }
-
-    public void getPicture() {
-        Log.d(tag, "Starting get picture");
-        if (cameraDevice == null) {
-            return;
-        }
-        CameraManager manager = (CameraManager) getSystemService(Context.CAMERA_SERVICE);
-        try {
-            CameraCharacteristics characteristics = manager.getCameraCharacteristics(cameraDevice.getId());
-            if (characteristics != null) {
-                jpegSizes = characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP).getOutputSizes(ImageFormat.JPEG);
-            }
-            int width = 640, height = 480;
-            for (Size size : jpegSizes) {
-                Log.d("MainActivity", Integer.toString(size.getWidth()) + ", " + Integer.toString(size.getHeight()));
-            }
-            if (jpegSizes != null && jpegSizes.length > 0) {
-                width = jpegSizes[0].getWidth();
-                height = jpegSizes[0].getHeight();
-            }
-            ImageReader reader = ImageReader.newInstance(width, height, ImageFormat.JPEG, 1);
-            List<Surface> outputSurfaces = new ArrayList<>(2);
-            outputSurfaces.add(reader.getSurface());
-            outputSurfaces.add(new Surface(textureView.getSurfaceTexture()));
-            final CaptureRequest.Builder requestBuilder = cameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_STILL_CAPTURE);
-            requestBuilder.addTarget(reader.getSurface());
-            requestBuilder.set(CaptureRequest.CONTROL_MODE, CameraMetadata.CONTROL_MODE_AUTO);
-//            int rotation = getWindowManager().getDefaultDisplay().getRotation();
-//            requestBuilder.set(CaptureRequest.JPEG_ORIENTATION, ORIENTATIONS.get(rotation));
-            requestBuilder.set(CaptureRequest.JPEG_ORIENTATION, 270);
-            ImageReader.OnImageAvailableListener imageAvailableListener = new ImageReader.OnImageAvailableListener() {
-                @Override
-                public void onImageAvailable(ImageReader reader) {
-                    Image image = null;
-                    try {
-                        image = reader.acquireLatestImage();
-                        ByteBuffer buffer = image.getPlanes()[0].getBuffer();
-                        byte[] imageByteArray = new byte[buffer.capacity()];
-                        buffer.get(imageByteArray);
-                        save(imageByteArray);
-                    } catch (Exception exception) {
-                        exception.printStackTrace();
-                    } finally {
-                        if (image != null) {
-                            image.close();
-                        }
-                    }
-                }
-
-                public void save(byte[] bytes) {
-                    // Gets the file to save the image to
-                    File outputFile = getOutputMediaFile();
-                    OutputStream outputStream = null;
-
-                    try {
-                        outputStream = new FileOutputStream(outputFile);
-                        outputStream.write(bytes);
-
-                        analyzeImage(outputFile);
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    } finally {
-                        try {
-                            if (outputStream != null) {
-                                outputStream.close();
-                            }
-                        } catch (Exception e) {
-                            e.printStackTrace();
-                        }
-                    }
-                }
-            };
-            HandlerThread handlerThread = new HandlerThread("TakePicture");
-            handlerThread.start();
-            final Handler handler = new Handler(handlerThread.getLooper());
-            reader.setOnImageAvailableListener(imageAvailableListener, handler);
-            final CameraCaptureSession.CaptureCallback previewSession = new CameraCaptureSession.CaptureCallback() {
-                @Override
-                public void onCaptureStarted(CameraCaptureSession session, CaptureRequest request, long timestamp, long frameNumber) {
-                    super.onCaptureStarted(session, request, timestamp, frameNumber);
-                }
-
-                @Override
-                public void onCaptureCompleted(CameraCaptureSession session, CaptureRequest request, TotalCaptureResult result) {
-                    super.onCaptureCompleted(session, request, result);
-                    startCamera();
-                }
-            };
-            cameraDevice.createCaptureSession(outputSurfaces, new CameraCaptureSession.StateCallback() {
-                @Override
-                public void onConfigured(CameraCaptureSession session) {
-                    try {
-                        session.capture(requestBuilder.build(), previewSession, handler);
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-                }
-
-                @Override
-                public void onConfigureFailed(CameraCaptureSession session) {
-                }
-            }, handler);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    public void openCamera() {
-        Log.d(tag, "Opening camera");
-
-        CameraManager manager = (CameraManager) getSystemService(Context.CAMERA_SERVICE);
-        try {
-            // Defaults to back-facing camera generally; if there's a front camera, use it
-            String cameraId = manager.getCameraIdList()[0];
-            for (String camera : manager.getCameraIdList()) {
-                CameraCharacteristics camCharacteristics = manager.getCameraCharacteristics(camera);
-                if (camCharacteristics.get(CameraCharacteristics.LENS_FACING) == CameraCharacteristics.LENS_FACING_FRONT) {
-                    cameraId = camera;
-                }
-            }
-
-            CameraCharacteristics characteristics = manager.getCameraCharacteristics(cameraId);
-            StreamConfigurationMap map = characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
-            previewSize = map.getOutputSizes(SurfaceTexture.class)[0];
-            if (ActivityCompat.checkSelfPermission(this, android.Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
-                return;
-            }
-            manager.openCamera(cameraId, stateCallback, null);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        }, 0, 5000);
     }
 
     @Override
     protected void onPause() {
         super.onPause();
+        CameraDevice cameraDevice = cameraInterface.getCameraDevice();
         if (cameraDevice != null) {
             cameraDevice.close();
-        }
-    }
-
-    public void startCamera() {
-        Log.d(tag, "Starting camera");
-        if (cameraDevice == null || !textureView.isAvailable() || previewSize == null) {
-            return;
-        }
-        SurfaceTexture texture = textureView.getSurfaceTexture();
-        if (texture == null) {
-            return;
-        }
-        texture.setDefaultBufferSize(previewSize.getWidth(), previewSize.getHeight());
-        Surface surface = new Surface(texture);
-        try {
-            previewBuilder = cameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        previewBuilder.addTarget(surface);
-        try {
-            cameraDevice.createCaptureSession(Arrays.asList(surface), new CameraCaptureSession.StateCallback() {
-                @Override
-                public void onConfigured(CameraCaptureSession session) {
-                    previewSession = session;
-                    getChangedPreview();
-                }
-
-                @Override
-                public void onConfigureFailed(CameraCaptureSession session) {
-                }
-            }, null);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    public void getChangedPreview() {
-        if (cameraDevice == null) {
-            return;
-        }
-        previewBuilder.set(CaptureRequest.CONTROL_MODE, CameraMetadata.CONTROL_MODE_AUTO);
-        HandlerThread thread = new HandlerThread("Changed Preview");
-        thread.start();
-        Handler handler = new Handler(thread.getLooper());
-        try {
-            previewSession.setRepeatingRequest(previewBuilder.build(), null, handler);
-        } catch (Exception e) {
-            e.printStackTrace();
         }
     }
 
@@ -330,6 +103,7 @@ public class TripActivity extends AppCompatActivity {
             imageBitmap = MediaStore.Images.Media.getBitmap(this.getContentResolver(), photoUri);
             imageView.setImageBitmap(imageBitmap);
 
+            // Runs the mobile vision
             getFeaturesFromMobileVision(imageBitmap);
         } catch (IOException e) {
             e.printStackTrace();
@@ -355,14 +129,32 @@ public class TripActivity extends AppCompatActivity {
 //                main.drawCircle(cx, cy, 10, paint);
 //            }
         }
-
     }
 
-    private static File getOutputMediaFile() {
-        File mediaStorageDir = new File(Environment.getExternalStorageDirectory(),"StayWoke");
+    public void onPauseClicked(View view) {
+        pauseTripButton.setVisibility(View.INVISIBLE);
+        resumeTripButton.setVisibility(View.VISIBLE);
+        endTripButton.setVisibility(View.VISIBLE);
+    }
+
+    public void onResumeClicked(View view) {
+        pauseTripButton.setVisibility(View.VISIBLE);
+        resumeTripButton.setVisibility(View.INVISIBLE);
+        endTripButton.setVisibility(View.INVISIBLE);
+    }
+
+    public void onEndClicked(View view) {
+        cameraInterface.getCameraDevice().close();
+
+        // Closes this activity
+        finish();
+    }
+
+    public static File getOutputMediaFile() {
+        File mediaStorageDir = new File(Environment.getExternalStorageDirectory(), "StayWoke");
         if (!mediaStorageDir.exists()) {
             if (!mediaStorageDir.mkdirs()) {
-                Log.d("MainActivity", "Failed to create directory");
+                Log.d("TripActivity",  "Failed to create directory");
                 return null;
             }
         }

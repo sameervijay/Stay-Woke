@@ -13,6 +13,7 @@
         android:layout_height="84dp"
         android:background="@mipmap/pausebutton"
         android:fontFamily="sans-serif"
+        android:onClick="onPauseClicked"
         android:text="Pause Trip"
         android:textColor="@color/common_google_signin_btn_text_dark_default"
         android:textSize="24sp"
@@ -20,6 +21,38 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toStartOf="parent"/>
+
+    <Button
+        android:id="@+id/endTripButton"
+        android:layout_width="match_parent"
+        android:layout_height="84dp"
+        android:background="@mipmap/endbutton"
+        android:fontFamily="sans-serif"
+        android:onClick="onEndClicked"
+        android:text="End Trip"
+        android:textColor="@color/common_google_signin_btn_text_dark_default"
+        android:textSize="24sp"
+        android:visibility="invisible"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.0"
+        app:layout_constraintStart_toStartOf="parent"/>
+
+    <Button
+        android:id="@+id/resumeTripButton"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:background="@mipmap/continuebutton"
+        android:fontFamily="sans-serif"
+        android:onClick="onResumeClicked"
+        android:text="Resume Trip"
+        android:textSize="36sp"
+        android:visibility="invisible"
+        app:layout_constraintBottom_toTopOf="@+id/endTripButton"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"/>
+
 
     <Button
         android:id="@+id/settingsButton"
@@ -31,24 +64,28 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="parent"/>
 
-    <ImageView
-        android:id="@+id/mainImageView"
-        android:layout_width="0dp"
-        android:layout_height="0dp"
-        app:layout_constraintBottom_toTopOf="@+id/pauseTripButton"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.0"
-        app:srcCompat="@drawable/common_google_signin_btn_icon_dark"/>
-
     <TextureView
         android:id="@+id/mainTextureView"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        app:layout_constraintBottom_toBottomOf="@+id/mainImageView"
+        android:visibility="invisible"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"/>
+
+    <TextView
+        android:id="@+id/continueTripTextView"
+        android:layout_width="252dp"
+        android:layout_height="43dp"
+        android:layout_marginBottom="50dp"
+        android:layout_marginEnd="8dp"
+        android:layout_marginStart="8dp"
+        android:text="CONTINUE TRIP"
+        android:textAlignment="center"
+        android:textColor="@color/common_google_signin_btn_text_dark_focused"
+        android:textSize="30sp"
+        app:layout_constraintBottom_toBottomOf="@+id/resumeTripButton"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"/>
 
 </android.support.constraint.ConstraintLayout>
