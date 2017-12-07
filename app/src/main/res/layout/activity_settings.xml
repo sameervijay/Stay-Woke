@@ -50,18 +50,17 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginEnd="44dp"
-        android:layout_marginTop="80dp"
         android:onClick="onLinkAccountClicked"
         android:text="Link Account"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/textView4"/>
+        app:layout_constraintTop_toTopOf="@+id/signInButton"/>
 
     <Button
         android:id="@+id/signInButton"
         android:layout_width="131dp"
         android:layout_height="47dp"
         android:layout_marginStart="56dp"
-        android:layout_marginTop="80dp"
+        android:layout_marginTop="60dp"
         android:onClick="onSignInOutClicked"
         android:text="Sign Out"
         app:layout_constraintStart_toStartOf="parent"
