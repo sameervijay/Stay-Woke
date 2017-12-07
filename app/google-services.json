@@ -1,0 +1,55 @@
+{
+  "project_info": {
+    "project_number": "566207151972",
+    "firebase_url": "https://staywoke-49226.firebaseio.com",
+    "project_id": "staywoke-49226",
+    "storage_bucket": "staywoke-49226.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:566207151972:android:d3c190f37d1163ae",
+        "android_client_info": {
+          "package_name": "edu.illinois.finalproject"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "566207151972-1mb9ak22benpctu1olnlrrpueld0aikj.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "edu.illinois.finalproject",
+            "certificate_hash": "af4de66b28321097f48981b5c168615a3e96a000"
+          }
+        },
+        {
+          "client_id": "566207151972-v543rrg2g9kf1ogqip4c4aif1d7ge2fq.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBiqVs1PO1qJM0wbQ6QZIuq4cloYFr_yU0"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 2,
+          "other_platform_oauth_client": [
+            {
+              "client_id": "566207151972-v543rrg2g9kf1ogqip4c4aif1d7ge2fq.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        },
+        "ads_service": {
+          "status": 2
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

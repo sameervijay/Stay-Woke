@@ -144,7 +144,9 @@ public class TripActivity extends AppCompatActivity {
     }
 
     public void onEndClicked(View view) {
-        cameraInterface.getCameraDevice().close();
+        if (cameraInterface.getCameraDevice() != null) {
+            cameraInterface.getCameraDevice().close();
+        }
 
         // Closes this activity
         finish();
