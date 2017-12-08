@@ -164,6 +164,8 @@ public class CameraInterface {
 //            int rotation = getWindowManager().getDefaultDisplay().getRotation();
 //            requestBuilder.set(CaptureRequest.JPEG_ORIENTATION, ORIENTATIONS.get(rotation));
             requestBuilder.set(CaptureRequest.JPEG_ORIENTATION, 270);
+
+            FaceData faceData = null;
             ImageReader.OnImageAvailableListener imageAvailableListener = new ImageReader.OnImageAvailableListener() {
                 @Override
                 public void onImageAvailable(ImageReader reader) {
@@ -175,7 +177,12 @@ public class CameraInterface {
                         buffer.get(imageByteArray);
 
                         Log.d(tag, "Image available");
-                        save(imageByteArray);
+
+                        // Analyzes the image for faces and returns a pointer to a FaceData object that contains
+                        // the relevant characteristics of the face
+                        FaceData faceFound = tripActivity.getImageHandler().analyzeImage(imageByteArray);
+                        tripActivity.processFace(faceFound);
+//                        save(imageByteArray);
                     } catch (Exception exception) {
                         exception.printStackTrace();
                     } finally {
@@ -196,7 +203,7 @@ public class CameraInterface {
 
                         // Actually runs the computer vision on the image in the output file
                         Log.d(tag, "Saving image");
-                        tripActivity.getImageHandler().analyzeImage(outputFile);
+                        tripActivity.getImageHandler().analyzeImage(bytes);
                     } catch (Exception e) {
                         e.printStackTrace();
                     } finally {

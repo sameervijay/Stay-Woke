@@ -32,6 +32,7 @@ public class TripActivity extends AppCompatActivity {
 
     private Timer imageTimer;
     private CameraInterface cameraInterface;
+    private FaceData lastFace;
 
     private MediaPlayer mediaPlayer;
     private Button pauseTripButton, resumeTripButton, endTripButton;
@@ -103,8 +104,36 @@ public class TripActivity extends AppCompatActivity {
         return imageHandler;
     }
 
+    public void processFace(FaceData face) {
+        // Draws bounding boxes over face and eyes
+        redrawFace(face);
+
+        if (face == null) {
+            return;
+        }
+
+        // These constants are subject to change
+        if (FaceData.leftEyeOpenThreshold == 0) {
+            FaceData.leftEyeOpenThreshold = face.getLeftEyeOpenProb() * 0.75f;
+        }
+        if (FaceData.rightEyeOpenThreshold == 0) {
+            FaceData.rightEyeOpenThreshold = face.getRightEyeOpenProb() * 0.75f;
+        }
+
+        lastFace = face;
+    }
+
+    public void redrawFace(FaceData face) {
+        // If face is null (no face is detected), draw a red X mark with a general tint too
+        if (face == null) {
+
+        } else {
+            // Draw bounding boxes on the face
+        }
+    }
+
     public static File getOutputMediaFile() {
-        File mediaStorageDir = new File(Environment.getExternalStorageDirectory(), "StayWoke");
+        File mediaStorageDir = new File(Environment.getExternalStorageDirectory(), "Woke");
         if (!mediaStorageDir.exists()) {
             if (!mediaStorageDir.mkdirs()) {
                 Log.d("TripActivity",  "Failed to create directory");
@@ -112,11 +141,8 @@ public class TripActivity extends AppCompatActivity {
             }
         }
         // Create a media file name
-        String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss")
-                .format(new Date());
-        File mediaFile;
-        mediaFile = new File(mediaStorageDir.getPath() + File.separator
-                + "IMG_" + timeStamp + ".jpg");
+        String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
+        File mediaFile = new File(mediaStorageDir.getPath() + File.separator + "IMG_" + timeStamp + ".jpg");
         return mediaFile;
     }
 }
