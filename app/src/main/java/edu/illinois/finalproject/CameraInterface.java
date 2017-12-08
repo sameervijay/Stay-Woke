@@ -1,5 +1,6 @@
 package edu.illinois.finalproject;
 
+import android.*;
 import android.content.Context;
 import android.content.pm.PackageManager;
 import android.graphics.ImageFormat;
@@ -14,6 +15,7 @@ import android.hardware.camera2.TotalCaptureResult;
 import android.hardware.camera2.params.StreamConfigurationMap;
 import android.media.Image;
 import android.media.ImageReader;
+import android.os.Build;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.support.v4.app.ActivityCompat;
@@ -44,51 +46,61 @@ public class CameraInterface {
     private CameraDevice cameraDevice;
     private TripActivity tripActivity;
     private TextureView textureView;
-    private CameraDevice.StateCallback stateCallback;
-    private TextureView.SurfaceTextureListener surfaceTextureListener;
 
     private String tag = "CameraInterface";
+
+    public TextureView.SurfaceTextureListener surfaceTextureListener = new TextureView.SurfaceTextureListener() {
+        @Override
+        public void onSurfaceTextureAvailable(SurfaceTexture surface, int width, int height) {
+            Log.d(tag, "Surface texture available");
+            openCamera();
+        }
+
+        @Override
+        public void onSurfaceTextureSizeChanged(SurfaceTexture surface, int width, int height) {
+        }
+
+        @Override
+        public boolean onSurfaceTextureDestroyed(SurfaceTexture surface) {
+            return false;
+        }
+
+        @Override
+        public void onSurfaceTextureUpdated(SurfaceTexture surface) {
+        }
+    };
+    private CameraDevice.StateCallback stateCallback = new CameraDevice.StateCallback() {
+        @Override
+        public void onOpened(CameraDevice camera) {
+            Log.d(tag, "State callback onOpened called");
+            cameraDevice = camera;
+            startCamera();
+        }
+
+        @Override
+        public void onDisconnected(CameraDevice camera) {
+        }
+
+        @Override
+        public void onError(CameraDevice camera, int error) {
+        }
+    };
 
     public CameraInterface(TripActivity activity, TextureView texture) {
         tripActivity = activity;
         textureView = texture;
 
-        stateCallback = new CameraDevice.StateCallback() {
-            @Override
-            public void onOpened(CameraDevice camera) {
-                cameraDevice = camera;
-                startCamera();
-            }
-
-            @Override
-            public void onDisconnected(CameraDevice camera) {
-            }
-
-            @Override
-            public void onError(CameraDevice camera, int error) {
-            }
-        };
-        surfaceTextureListener = new TextureView.SurfaceTextureListener() {
-            @Override
-            public void onSurfaceTextureAvailable(SurfaceTexture surface, int width, int height) {
-                openCamera();
-            }
-
-            @Override
-            public void onSurfaceTextureSizeChanged(SurfaceTexture surface, int width, int height) {
-            }
-
-            @Override
-            public boolean onSurfaceTextureDestroyed(SurfaceTexture surface) {
-                return false;
-            }
-
-            @Override
-            public void onSurfaceTextureUpdated(SurfaceTexture surface) {
-            }
-        };
-
         textureView.setSurfaceTextureListener(surfaceTextureListener);
+
+        // Following Camera permission request derived from:
+        // https://stackoverflow.com/questions/35451833/requesting-camera-permission-with-android-sdk-23
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            if (tripActivity.checkSelfPermission(android.Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
+                ActivityCompat.requestPermissions(tripActivity, new String[]{android.Manifest.permission.CAMERA}, 1);
+            }
+        }
+
+        Log.d(tag, "Instantiating CameraInterface");
     }
 
     public void startCamera() {
@@ -128,6 +140,7 @@ public class CameraInterface {
     public void getPicture() {
         Log.d(tag, "Starting get picture");
         if (cameraDevice == null) {
+            Log.d(tag, "Camera device is null; aborting getPicture");
             return;
         }
         CameraManager manager = (CameraManager) tripActivity.getSystemService(Context.CAMERA_SERVICE);
@@ -160,6 +173,8 @@ public class CameraInterface {
                         ByteBuffer buffer = image.getPlanes()[0].getBuffer();
                         byte[] imageByteArray = new byte[buffer.capacity()];
                         buffer.get(imageByteArray);
+
+                        Log.d(tag, "Image available");
                         save(imageByteArray);
                     } catch (Exception exception) {
                         exception.printStackTrace();
@@ -180,7 +195,8 @@ public class CameraInterface {
                         outputStream.write(bytes);
 
                         // Actually runs the computer vision on the image in the output file
-                        tripActivity.analyzeImage(outputFile);
+                        Log.d(tag, "Saving image");
+                        tripActivity.getImageHandler().analyzeImage(outputFile);
                     } catch (Exception e) {
                         e.printStackTrace();
                     } finally {
