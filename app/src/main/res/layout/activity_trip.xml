@@ -103,4 +103,16 @@
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintVertical_bias="1.0"/>
 
+    <edu.illinois.finalproject.camera.CameraSourcePreview
+        android:id="@+id/preview"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <edu.illinois.finalproject.camera.GraphicOverlay
+            android:id="@+id/faceOverlay"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
+
+    </edu.illinois.finalproject.camera.CameraSourcePreview>
+
 </android.support.constraint.ConstraintLayout>
