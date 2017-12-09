@@ -1,6 +1,7 @@
 package edu.illinois.finalproject;
 
 import android.graphics.PointF;
+import android.media.MediaPlayer;
 import android.util.Log;
 
 import com.google.android.gms.vision.Tracker;
@@ -17,12 +18,12 @@ import edu.illinois.finalproject.camera.GraphicOverlay;
  * Created by sameervijay on 12/9/17.
  */
 
-// Following class derived from:
-// https://github.com/googlesamples/android-vision/blob/master/visionSamples/googly-eyes/app/src/main/java/com/google/
-// android/gms/samples/vision/face/googlyeyes/GooglyFaceTracker.java
+// Class derived from: Google Vision GooglyEyes Sample
+// https://github.com/googlesamples/android-vision/blob/master/visionSamples/googly-eyes
 
 public class WokeFaceTracker extends Tracker<Face> {
-    private static final float EYE_CLOSED_THRESHOLD = 0.3f;
+    private static final float EYES_CLOSED_THRESHOLD = 0.3f;
+    private static final int EYES_CLOSED_ALARM_DELAY = 1000;
     private final String tag = "WokeFaceTracker";
 
     private GraphicOverlay graphicOverlay;
@@ -33,8 +34,14 @@ public class WokeFaceTracker extends Tracker<Face> {
     private boolean lastLeftOpen = true;
     private boolean lastRightOpen = true;
 
-    WokeFaceTracker(GraphicOverlay overlay) {
+    private long eyesClosedStartTime = 0;
+    private boolean setOffAlarm = false;
+
+    private TripActivity tripActivity;
+
+    WokeFaceTracker(GraphicOverlay overlay, TripActivity activity) {
         graphicOverlay = overlay;
+        tripActivity = activity;
     }
 
     @Override
@@ -57,29 +64,63 @@ public class WokeFaceTracker extends Tracker<Face> {
         PointF rightPosition = getLandmarkPosition(face, Landmark.RIGHT_EYE);
 
         float leftOpenScore = face.getIsLeftEyeOpenProbability();
-        boolean isLeftOpen;
+        boolean leftOpen;
         if (leftOpenScore == Face.UNCOMPUTED_PROBABILITY) {
-            isLeftOpen = lastLeftOpen;
+            leftOpen = lastLeftOpen;
         } else {
-            isLeftOpen = (leftOpenScore > EYE_CLOSED_THRESHOLD);
-            lastLeftOpen = isLeftOpen;
+            leftOpen = (leftOpenScore > EYES_CLOSED_THRESHOLD);
+            lastLeftOpen = leftOpen;
         }
 
         float rightOpenScore = face.getIsRightEyeOpenProbability();
-        boolean isRightOpen;
+        boolean rightOpen;
         if (rightOpenScore == Face.UNCOMPUTED_PROBABILITY) {
-            isRightOpen = lastRightOpen;
+            rightOpen = lastRightOpen;
         } else {
-            isRightOpen = (rightOpenScore > EYE_CLOSED_THRESHOLD);
-            lastRightOpen = isRightOpen;
+            rightOpen = (rightOpenScore > EYES_CLOSED_THRESHOLD);
+            lastRightOpen = rightOpen;
         }
         Log.d(tag, leftPosition.toString());
-        Log.d(tag, rightPosition.toString());;
-        Log.d(tag, "Left open: " + isLeftOpen);
-        Log.d(tag, "Right open: " + isRightOpen);
+        Log.d(tag, rightPosition.toString());
+        Log.d(tag, "Left open: " + leftOpen);
+        Log.d(tag, "Right open: " + rightOpen);
+
+
+        Log.d(tag, "Eyes closed start time: " + eyesClosedStartTime);
+
+        MediaPlayer mediaPlayer = tripActivity.getMediaPlayer();
+        if (mediaPlayer != null) {
+            Log.d(tag, "Media player playing: " + mediaPlayer.isPlaying());
+        } else {
+            Log.d(tag, "Media player null");
+        }
+
+
+        if (!leftOpen && !rightOpen) {
+
+            // Starts the eyes closed "timer" because eyes need to be closed for 1 second for an alarm to go off
+            if (eyesClosedStartTime == 0 && (mediaPlayer == null || !mediaPlayer.isPlaying())) {
+                Log.d(tag, "Starting eyes closed timer");
+                eyesClosedStartTime = System.currentTimeMillis();
+            } else if (System.currentTimeMillis() > eyesClosedStartTime + EYES_CLOSED_ALARM_DELAY && !setOffAlarm &&
+                        (mediaPlayer == null || !mediaPlayer.isPlaying())) {
+                Log.d(tag, "Starting alarm");
+                // setOffAlarm exists to ensure another alarm doesn't go off after the first one ends
+                setOffAlarm = true;
+                tripActivity.startAlarm();
+            }
+        } else {
+            
+            Log.d(tag, "Stopping alarm and eyes closed timer");
+            eyesClosedStartTime = 0;
+            setOffAlarm = false;
+            if (mediaPlayer != null && mediaPlayer.isPlaying()) {
+                tripActivity.stopAlarm();
+            }
+        }
 
         // Draws the bounding boxes around eyes
-        eyesGraphic.updateEyes(leftPosition, isLeftOpen, rightPosition, isRightOpen);
+        eyesGraphic.updateEyes(leftPosition, leftOpen, rightPosition, rightOpen);
     }
 
     /**

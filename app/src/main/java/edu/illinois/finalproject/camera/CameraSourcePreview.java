@@ -33,9 +33,8 @@ import java.io.IOException;
 
 import edu.illinois.finalproject.TripActivity;
 
-// Class derived from:
-// https://github.com/googlesamples/android-vision/blob/master/visionSamples/googly-eyes/app/src/main/java/com/google/
-// android/gms/samples/vision/face/googlyeyes/ui/camera/CameraSourcePreview.java
+// Class derived from: Google Vision GooglyEyes Sample
+// https://github.com/googlesamples/android-vision/blob/master/visionSamples/googly-eyes
 
 public class CameraSourcePreview extends ViewGroup {
     private static final String TAG = "CameraSourcePreview";

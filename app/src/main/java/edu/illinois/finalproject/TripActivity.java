@@ -1,8 +1,12 @@
 package edu.illinois.finalproject;
 
+import android.app.Dialog;
 import android.content.Context;
 import android.media.MediaPlayer;
+import android.os.CountDownTimer;
 import android.os.Environment;
+import android.os.Handler;
+import android.os.Looper;
 import android.provider.Settings;
 import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
@@ -13,6 +17,8 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
 
+import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.GoogleApiAvailability;
 import com.google.android.gms.vision.CameraSource;
 import com.google.android.gms.vision.Detector;
 import com.google.android.gms.vision.Tracker;
@@ -35,13 +41,20 @@ public class TripActivity extends AppCompatActivity {
     private TextureView textureView;
     private ImageView imageView;
 
-    private Timer imageTimer;
     private CameraInterface cameraInterface;
-    private FaceData lastFace;
 
     private MediaPlayer mediaPlayer;
+    private CountDownTimer alarmTimer;
+
     private Button pauseTripButton, resumeTripButton, endTripButton;
     private ImageHandler imageHandler;
+
+    private WokeFaceTracker faceTracker;
+    private FaceDetector faceDetector;
+
+    private static final int PLAY_SERVICES_UNAVAILABLE_CODE = 9001;
+    private static final int ALARM_TIME = 6000;
+    private static final int ALARM_INTERVAL = 1000;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -60,17 +73,6 @@ public class TripActivity extends AppCompatActivity {
 //        cameraInterface = new CameraInterface(this, textureView);
 //        imageHandler = new ImageHandler(this, imageView);
 
-        // Initializes the media player to play sounds
-        mediaPlayer = MediaPlayer.create(this, Settings.System.DEFAULT_RINGTONE_URI);
-
-//        imageTimer = new Timer();
-//        imageTimer.scheduleAtFixedRate(new TimerTask() {
-//            @Override
-//            public void run() {
-//                cameraInterface.getPicture();
-//            }
-//        }, 0, 5000);
-
         cameraPreview = (CameraSourcePreview) findViewById(R.id.preview);
         graphicOverlay = (GraphicOverlay) findViewById(R.id.faceOverlay);
         cameraPreview.tripActivity = this;
@@ -81,24 +83,9 @@ public class TripActivity extends AppCompatActivity {
     private CameraSourcePreview cameraPreview;
     private GraphicOverlay graphicOverlay;
 
-    /**
-     * Creates the face detector and associated processing pipeline to support either front facing
-     * mode or rear facing mode.  Checks if the detector is ready to use, and displays a low storage
-     * warning if it was not possible to download the face library.
-     */
     @NonNull
     private FaceDetector createFaceDetector(Context context) {
-        // Use of "fast mode" enables faster detection for frontward faces, at the expense of not
-        // attempting to detect faces at more varied angles (e.g., faces in profile).  Therefore,
-        // faces that are turned too far won't be detected under fast mode.
-        //
-        // Setting the minimum face size not only controls how large faces must be in order to be
-        // detected, it also affects performance.  Since it takes longer to scan for smaller faces,
-        // we increase the minimum face size for the rear facing mode a little bit in order to make
-        // tracking faster (at the expense of missing smaller faces).  But this optimization is less
-        // important for the front facing case, because when "prominent face only" is enabled, the
-        // detector stops scanning for faces after it has found the first (large) face.
-        FaceDetector detector = new FaceDetector.Builder(context)
+        faceDetector = new FaceDetector.Builder(context)
                 .setLandmarkType(FaceDetector.ALL_LANDMARKS)
                 .setClassificationType(FaceDetector.ALL_CLASSIFICATIONS)
                 .setTrackingEnabled(true)
@@ -107,10 +94,10 @@ public class TripActivity extends AppCompatActivity {
                 .setMinFaceSize(0.35f)
                 .build();
 
-        Tracker<Face> tracker = new WokeFaceTracker(graphicOverlay);
-        Detector.Processor<Face> processor = new LargestFaceFocusingProcessor.Builder(detector, tracker).build();
-        detector.setProcessor(processor);
-        return detector;
+        faceTracker = new WokeFaceTracker(graphicOverlay, this);
+        Detector.Processor<Face> processor = new LargestFaceFocusingProcessor.Builder(faceDetector, faceTracker).build();
+        faceDetector.setProcessor(processor);
+        return faceDetector;
     }
 
     private void createCameraSource() {
@@ -127,18 +114,14 @@ public class TripActivity extends AppCompatActivity {
                 .build();
     }
 
-    /**
-     * Starts or restarts the camera source, if it exists.  If the camera source doesn't exist yet
-     * (e.g., because onResume was called before the camera source was created), this will be called
-     * again when the camera source is created.
-     */
     private void startCameraSource() {
-        // check that the device has play services available.
-//        int code = GoogleApiAvailability.getInstance().isGooglePlayServicesAvailable(getApplicationContext());
-//        if (code != ConnectionResult.SUCCESS) {
-//            Dialog dlg = GoogleApiAvailability.getInstance().getErrorDialog(this, code, RC_HANDLE_GMS);
-//            dlg.show();
-//        }
+        // Checks if play services are there
+        int code = GoogleApiAvailability.getInstance().isGooglePlayServicesAvailable(getApplicationContext());
+        if (code != ConnectionResult.SUCCESS) {
+            Dialog dlg = GoogleApiAvailability.getInstance().getErrorDialog(this,
+                                                                            code, PLAY_SERVICES_UNAVAILABLE_CODE);
+            dlg.show();
+        }
 
         if (cameraSource != null) {
             try {
@@ -189,24 +172,54 @@ public class TripActivity extends AppCompatActivity {
         finish();
     }
 
-    public ImageHandler getImageHandler() {
-        return imageHandler;
+    public void startAlarm() {
+        Log.d(tag, "Call to Trip activity start alarm");
+        // In case the alarm happens to already be playing, stop it and start a new one
+        stopAlarm();
+
+        // Initializes the media player to play sounds and starts it
+        mediaPlayer = MediaPlayer.create(this, Settings.System.DEFAULT_RINGTONE_URI);
+        mediaPlayer.start();
+
+        // FIREBASE WRITE TO DATABASE
+
+        // Starts the timer to turn the alarm off after 4 seconds
+        new Handler(Looper.getMainLooper()).post(new Runnable() {
+            @Override
+            public void run() {
+                alarmTimer = new CountDownTimer(ALARM_TIME, ALARM_INTERVAL) {
+                    @Override
+                    public void onTick(long millisUntilFinished) {
+                    }
+
+                    @Override
+                    public void onFinish() {
+                        stopAlarm();
+                    }
+                }.start();
+            }
+        });
+    }
+    public void stopAlarm() {
+        if (mediaPlayer != null) {
+            if (mediaPlayer.isPlaying()) {
+                mediaPlayer.stop();
+            }
+            mediaPlayer.release();
+        }
+        mediaPlayer = null;
+
+        if (alarmTimer != null) {
+            alarmTimer.cancel();
+        }
+        alarmTimer = null;
+    }
+    public MediaPlayer getMediaPlayer() {
+        return mediaPlayer;
     }
 
-    public void processFace(FaceData face) {
-        if (face == null) {
-            return;
-        }
-
-        // These constants are subject to change
-        if (FaceData.leftEyeOpenThreshold == 0) {
-            FaceData.leftEyeOpenThreshold = face.getLeftEyeOpenProb() * 0.75f;
-        }
-        if (FaceData.rightEyeOpenThreshold == 0) {
-            FaceData.rightEyeOpenThreshold = face.getRightEyeOpenProb() * 0.75f;
-        }
-
-        lastFace = face;
+    public ImageHandler getImageHandler() {
+        return imageHandler;
     }
 
     public static File getOutputMediaFile() {

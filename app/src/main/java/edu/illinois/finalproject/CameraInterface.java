@@ -192,7 +192,7 @@ public class CameraInterface {
                         // Analyzes the image for faces and returns a pointer to a FaceData object that contains
                         // the relevant characteristics of the face
                         FaceData faceFound = tripActivity.getImageHandler().analyzeImage(imageByteArray);
-                        tripActivity.processFace(faceFound);
+//                        tripActivity.processFace(faceFound);
 //                        save(imageByteArray);
                     } catch (Exception exception) {
                         exception.printStackTrace();

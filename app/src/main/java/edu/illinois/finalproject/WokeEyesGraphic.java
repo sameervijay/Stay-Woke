@@ -12,9 +12,8 @@ import edu.illinois.finalproject.camera.GraphicOverlay;
  * Created by sameervijay on 12/9/17.
  */
 
-// Following class derived from:
-// https://github.com/googlesamples/android-vision/blob/master/visionSamples/googly-eyes/app/src/main/java/com/google/
-// android/gms/samples/vision/face/googlyeyes/GooglyEyesGraphic.java
+// Class derived from: Google Vision GooglyEyes Sample
+// https://github.com/googlesamples/android-vision/blob/master/visionSamples/googly-eyes
 
 public class WokeEyesGraphic extends GraphicOverlay.Graphic {
     private static final float EYE_RADIUS_PROPORTION = 0.45f;
@@ -31,14 +30,10 @@ public class WokeEyesGraphic extends GraphicOverlay.Graphic {
 
         eyePaint = new Paint();
         eyePaint.setColor(Color.WHITE);
-        eyePaint.setStrokeWidth(10);
+        eyePaint.setStrokeWidth(7);
         eyePaint.setStyle(Paint.Style.STROKE);
     }
 
-    /**
-     * Updates the eye positions and state from the detection of the most recent frame.  Invalidates
-     * the relevant portions of the overlay to trigger a redraw.
-     */
     void updateEyes(PointF leftPosition, boolean leftOpen,
                     PointF rightPosition, boolean rightOpen) {
         this.leftPosition = leftPosition;
@@ -50,11 +45,6 @@ public class WokeEyesGraphic extends GraphicOverlay.Graphic {
         postInvalidate();
     }
 
-    /**
-     * Draws the current eye state to the supplied canvas.  This will draw the eyes at the last
-     * reported position from the tracker, and the iris positions according to the physics
-     * simulations for each iris given motion and other forces.
-     */
     @Override
     public void draw(Canvas canvas) {
         PointF detectLeftPosition = leftPosition;
@@ -71,6 +61,7 @@ public class WokeEyesGraphic extends GraphicOverlay.Graphic {
                 Math.pow(rightPosition.x - leftPosition.x, 2) + Math.pow(rightPosition.y - leftPosition.y, 2));
         float eyeRadius = EYE_RADIUS_PROPORTION * distance;
 
+        // Draws a single eye given position and whether it's open
         drawEye(canvas, leftPosition, eyeRadius, leftOpen);
         drawEye(canvas, rightPosition, eyeRadius, rightOpen);
     }
@@ -79,11 +70,11 @@ public class WokeEyesGraphic extends GraphicOverlay.Graphic {
         Rect leftRect = new Rect((int)(eyePosition.x - eyeRadius), (int)(eyePosition.y - eyeRadius),
                 (int)(eyePosition.x + eyeRadius), (int)(eyePosition.y + eyeRadius));
 
-        canvas.drawRect(leftRect, eyePaint);
-
         if (isOpen) {
-            // Might change the color of the bounding box depending on whether the eye is open
+            eyePaint.setColor(Color.GREEN);
         } else {
+            eyePaint.setColor(Color.RED);
         }
+        canvas.drawRect(leftRect, eyePaint);
     }
 }
