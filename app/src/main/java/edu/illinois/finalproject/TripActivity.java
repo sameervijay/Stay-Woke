@@ -53,7 +53,7 @@ public class TripActivity extends AppCompatActivity {
     private FaceDetector faceDetector;
 
     private static final int PLAY_SERVICES_UNAVAILABLE_CODE = 9001;
-    private static final int ALARM_TIME = 6000;
+    private static final int ALARM_TIME = 8000;
     private static final int ALARM_INTERVAL = 1000;
 
     @Override
@@ -91,7 +91,7 @@ public class TripActivity extends AppCompatActivity {
                 .setTrackingEnabled(true)
 //                .setMode(FaceDetector.FAST_MODE)
                 .setProminentFaceOnly(true)
-                .setMinFaceSize(0.35f)
+                .setMinFaceSize(0.25f)
                 .build();
 
         faceTracker = new WokeFaceTracker(graphicOverlay, this);
@@ -115,7 +115,7 @@ public class TripActivity extends AppCompatActivity {
     }
 
     private void startCameraSource() {
-        // Checks if play services are there
+        // Checks if play services are available
         int code = GoogleApiAvailability.getInstance().isGooglePlayServicesAvailable(getApplicationContext());
         if (code != ConnectionResult.SUCCESS) {
             Dialog dlg = GoogleApiAvailability.getInstance().getErrorDialog(this,
@@ -142,13 +142,15 @@ public class TripActivity extends AppCompatActivity {
     @Override
     protected void onPause() {
         super.onPause();
-//        CameraDevice cameraDevice = cameraInterface.getCameraDevice();
-//        if (cameraDevice != null) {
-//            cameraDevice.close();
-//        }
-//        if (imageTimer != null) {
-//            imageTimer.cancel();
-//        }
+        cameraPreview.stop();
+    }
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+
+        if (cameraSource != null) {
+            cameraSource.release();
+        }
     }
 
     public void onPauseClicked(View view) {
@@ -178,12 +180,12 @@ public class TripActivity extends AppCompatActivity {
         stopAlarm();
 
         // Initializes the media player to play sounds and starts it
-        mediaPlayer = MediaPlayer.create(this, Settings.System.DEFAULT_RINGTONE_URI);
+        mediaPlayer = MediaPlayer.create(this, Settings.System.DEFAULT_ALARM_ALERT_URI);
         mediaPlayer.start();
 
         // FIREBASE WRITE TO DATABASE
 
-        // Starts the timer to turn the alarm off after 4 seconds
+        // In main thread, starts the timer to turn the alarm off after ALARM_TIME seconds
         new Handler(Looper.getMainLooper()).post(new Runnable() {
             @Override
             public void run() {

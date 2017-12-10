@@ -24,6 +24,7 @@ import edu.illinois.finalproject.camera.GraphicOverlay;
 public class WokeFaceTracker extends Tracker<Face> {
     private static final float EYES_CLOSED_THRESHOLD = 0.3f;
     private static final int EYES_CLOSED_ALARM_DELAY = 1000;
+    private static final int FACE_OUT_ALARM_DELAY = 3000;
     private final String tag = "WokeFaceTracker";
 
     private GraphicOverlay graphicOverlay;
@@ -49,11 +50,6 @@ public class WokeFaceTracker extends Tracker<Face> {
         eyesGraphic = new WokeEyesGraphic(graphicOverlay);
     }
 
-    /**
-     * Updates the positions and state of eyes to the underlying graphic, according to the most
-     * recent face detection results.  The graphic will render the eyes and simulate the motion of
-     * the iris based upon these changes over time.
-     */
     @Override
     public void onUpdate(FaceDetector.Detections<Face> detectionResults, Face face) {
         graphicOverlay.add(eyesGraphic);
@@ -97,7 +93,6 @@ public class WokeFaceTracker extends Tracker<Face> {
 
 
         if (!leftOpen && !rightOpen) {
-
             // Starts the eyes closed "timer" because eyes need to be closed for 1 second for an alarm to go off
             if (eyesClosedStartTime == 0 && (mediaPlayer == null || !mediaPlayer.isPlaying())) {
                 Log.d(tag, "Starting eyes closed timer");
@@ -105,12 +100,12 @@ public class WokeFaceTracker extends Tracker<Face> {
             } else if (System.currentTimeMillis() > eyesClosedStartTime + EYES_CLOSED_ALARM_DELAY && !setOffAlarm &&
                         (mediaPlayer == null || !mediaPlayer.isPlaying())) {
                 Log.d(tag, "Starting alarm");
+
                 // setOffAlarm exists to ensure another alarm doesn't go off after the first one ends
                 setOffAlarm = true;
                 tripActivity.startAlarm();
             }
         } else {
-            
             Log.d(tag, "Stopping alarm and eyes closed timer");
             eyesClosedStartTime = 0;
             setOffAlarm = false;
@@ -123,20 +118,26 @@ public class WokeFaceTracker extends Tracker<Face> {
         eyesGraphic.updateEyes(leftPosition, leftOpen, rightPosition, rightOpen);
     }
 
-    /**
-     * Hide the graphic when the corresponding face was not detected.  This can happen for
-     * intermediate frames temporarily (e.g., if the face was momentarily blocked from
-     * view).
-     */
     @Override
     public void onMissing(FaceDetector.Detections<Face> detectionResults) {
+        MediaPlayer mediaPlayer = tripActivity.getMediaPlayer();
+
+        // Starts the eyes closed "timer" because eyes need to be closed for 1 second for an alarm to go off
+        if (eyesClosedStartTime == 0 && (mediaPlayer == null || !mediaPlayer.isPlaying())) {
+            Log.d(tag, "Starting eyes closed timer");
+            eyesClosedStartTime = System.currentTimeMillis();
+        } else if (System.currentTimeMillis() > eyesClosedStartTime + FACE_OUT_ALARM_DELAY && !setOffAlarm &&
+                (mediaPlayer == null || !mediaPlayer.isPlaying())) {
+            Log.d(tag, "Starting alarm");
+
+            // setOffAlarm exists to ensure another alarm doesn't go off after the first one ends
+            setOffAlarm = true;
+            tripActivity.startAlarm();
+        }
+
         graphicOverlay.remove(eyesGraphic);
     }
 
-    /**
-     * Called when the face is assumed to be gone for good. Remove the googly eyes graphic from
-     * the overlay.
-     */
     @Override
     public void onDone() {
         graphicOverlay.remove(eyesGraphic);
