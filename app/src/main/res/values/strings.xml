@@ -80,4 +80,8 @@
     <string name="title_activity_link_account">LinkAccountActivity</string>
     <string name="title_link_account">Link Account</string>
     <string name="default_sign_in_message">Please sign in</string>
+    <string name="durationEmptyText">Trip has not ended</string>
+    <string name="alarmsEmptyText">No alarms</string>
+    <string name="linkedAccountsEmpty">No child accounts linked</string>
+    <string name="lastTripEmptyText">Linked user has not gone on any trips yet</string>
 </resources>

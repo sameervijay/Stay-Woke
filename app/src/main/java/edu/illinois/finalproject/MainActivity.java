@@ -8,10 +8,7 @@ import android.view.View;
 import android.widget.Button;
 
 public class MainActivity extends AppCompatActivity {
-    private ImageHandler imageHandler;
-
     private Button startTripButton;
-
     private String logTag = "MainActivity";
 
     @Override
