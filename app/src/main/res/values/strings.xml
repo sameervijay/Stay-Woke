@@ -84,4 +84,14 @@
     <string name="alarmsEmptyText">No alarms</string>
     <string name="linkedAccountsEmpty">No child accounts linked</string>
     <string name="lastTripEmptyText">Linked user has not gone on any trips yet</string>
+    <string name="noUserSignInText">Tap \"Sign In\" to access your account</string>
+    <string name="sign_out_literal_text">Sign Out</string>
+    <string name="link_account_literal_text">Link Account</string>
+    <string name="duration_literal_text">Duration:</string>
+    <string name="alarms_literal_text">Alarms Set Off:</string>
+    <string name="linked_email_literal_text">Linked email address</string>
+    <string name="linked_children_literal_text">Linked Children</string>
+    <string name="email_address_literal_text">Email Address</string>
+    <string name="name_literal_text">Name</string>
+    <string name="last_trip_literal_text">Last Trip:</string>
 </resources>

@@ -15,7 +15,7 @@
         android:layout_marginEnd="8dp"
         android:layout_marginStart="12dp"
         android:layout_marginTop="12dp"
-        android:text="Name"
+        android:text="@string/name_literal_text"
         android:textColor="@color/colorPrimaryDark"
         android:textSize="24sp"
         app:layout_constraintEnd_toStartOf="@+id/signInButton"
@@ -26,7 +26,7 @@
         android:id="@+id/emailTextView"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:text="Email Address"
+        android:text="@string/email_address_literal_text"
         android:textColor="@android:color/black"
         android:textSize="18sp"
         app:layout_constraintEnd_toEndOf="@+id/nameTextView"
@@ -34,13 +34,13 @@
         app:layout_constraintTop_toBottomOf="@+id/nameTextView"/>
 
     <TextView
-        android:id="@+id/textView4"
+        android:id="@+id/linkedToTextView"
         android:layout_width="0dp"
         android:layout_height="40dp"
         android:layout_marginEnd="8dp"
         android:layout_marginStart="12dp"
         android:layout_marginTop="108dp"
-        android:text="Linked To"
+        android:text="@string/linked_children_literal_text"
         android:textAlignment="viewStart"
         android:textColor="@color/colorPrimaryDark"
         android:textSize="24sp"
@@ -55,9 +55,9 @@
         android:layout_marginEnd="8dp"
         android:layout_marginTop="8dp"
         android:onClick="onLinkAccountClicked"
-        android:text="Link Account"
+        android:text="@string/link_account_literal_text"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toTopOf="@+id/textView4"/>
+        app:layout_constraintTop_toTopOf="@+id/linkedToTextView"/>
 
     <Button
         android:id="@+id/signInButton"
@@ -66,7 +66,7 @@
         android:layout_marginEnd="8dp"
         android:layout_marginTop="8dp"
         android:onClick="onSignInOutClicked"
-        android:text="Sign Out"
+        android:text="@string/sign_out_literal_text"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="@+id/nameTextView"/>
 
@@ -75,12 +75,12 @@
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginStart="12dp"
-        android:text="Linked email address"
+        android:text="@string/linked_email_literal_text"
         android:textAlignment="viewStart"
         android:textColor="@android:color/black"
-        app:layout_constraintEnd_toEndOf="@+id/textView4"
+        app:layout_constraintEnd_toEndOf="@+id/linkedToTextView"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/textView4"/>
+        app:layout_constraintTop_toBottomOf="@+id/linkedToTextView"/>
 
     <TextView
         android:id="@+id/lastTripTextView"
@@ -89,7 +89,7 @@
         android:layout_marginEnd="8dp"
         android:layout_marginStart="12dp"
         android:layout_marginTop="16dp"
-        android:text="Last Trip:"
+        android:text="@string/last_trip_literal_text"
         android:textAlignment="center"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -99,7 +99,7 @@
         android:id="@+id/durationTextView"
         android:layout_width="0dp"
         android:layout_height="28dp"
-        android:text="Duration:"
+        android:text="@string/duration_literal_text"
         android:textAlignment="center"
         app:layout_constraintEnd_toEndOf="@+id/lastTripTextView"
         app:layout_constraintStart_toStartOf="@+id/lastTripTextView"
@@ -109,7 +109,7 @@
         android:id="@+id/alarmsTextView"
         android:layout_width="0dp"
         android:layout_height="28dp"
-        android:text="Alarms Set Off:"
+        android:text="@string/alarms_literal_text"
         android:textAlignment="center"
         app:layout_constraintEnd_toEndOf="@+id/durationTextView"
         app:layout_constraintStart_toStartOf="@+id/durationTextView"
