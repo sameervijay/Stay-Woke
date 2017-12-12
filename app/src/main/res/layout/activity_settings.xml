@@ -8,6 +8,17 @@
     android:layout_height="match_parent"
     tools:context="edu.illinois.finalproject.SettingsActivity">
 
+    <ImageView
+        android:id="@+id/backgroundSettings"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:scaleType="fitXY"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:srcCompat="@mipmap/continuebutton"/>
+
     <TextView
         android:id="@+id/nameTextView"
         android:layout_width="0dp"

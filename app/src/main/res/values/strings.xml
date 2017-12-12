@@ -90,7 +90,7 @@
     <string name="duration_literal_text">Duration:</string>
     <string name="alarms_literal_text">Alarms Set Off:</string>
     <string name="linked_email_literal_text">Linked email address</string>
-    <string name="linked_children_literal_text">Linked Children</string>
+    <string name="linked_children_literal_text">Linked Account</string>
     <string name="email_address_literal_text">Email Address</string>
     <string name="name_literal_text">Name</string>
     <string name="last_trip_literal_text">Last Trip:</string>
