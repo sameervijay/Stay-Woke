@@ -264,6 +264,9 @@ public class TripActivity extends AppCompatActivity {
         }
     }
     @Override
+    /**
+     * Called when the SettingsActivity closes; restarts the camera preview
+     */
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         if (cameraPreview != null) {
             startCameraSource();

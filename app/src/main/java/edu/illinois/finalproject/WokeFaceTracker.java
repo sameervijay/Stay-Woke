@@ -23,7 +23,7 @@ import edu.illinois.finalproject.camera.GraphicOverlay;
 // https://github.com/googlesamples/android-vision/blob/master/visionSamples/googly-eyes
 
 public class WokeFaceTracker extends Tracker<Face> {
-    private static final float EYES_CLOSED_THRESHOLD = 0.3f;
+    private static final float EYES_CLOSED_THRESHOLD = 0.35f;
     private static final int EYES_CLOSED_ALARM_DELAY = 1000;
     private static final int FACE_OUT_ALARM_DELAY = 3000;
     private final String tag = "WokeFaceTracker";
@@ -57,6 +57,9 @@ public class WokeFaceTracker extends Tracker<Face> {
     @Override
     /**
      * Called every time the tracker updates/processes a new frame. Starts the alarm if both eyes are closed
+     *
+     * @param detectionResults contains the detailed results of the tracker's face detection
+     * @param face Face object containing landmarks and landmark positions
      */
     public void onUpdate(FaceDetector.Detections<Face> detectionResults, Face face) {
         graphicOverlay.add(eyesGraphic);
