@@ -4,7 +4,6 @@ import android.app.Dialog;
 import android.content.Context;
 import android.media.MediaPlayer;
 import android.os.CountDownTimer;
-import android.os.Environment;
 import android.os.Handler;
 import android.os.Looper;
 import android.provider.Settings;
@@ -12,14 +11,11 @@ import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
-import android.view.TextureView;
 import android.view.View;
 import android.widget.Button;
-import android.widget.ImageView;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GoogleApiAvailability;
-import com.google.firebase.FirebaseApp;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DataSnapshot;
@@ -27,18 +23,11 @@ import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
-//import com.google.android.gms.vision.CameraSource;
-//import com.google.android.gms.vision.Detector;
-//import com.google.android.gms.vision.face.Face;
-//import com.google.android.gms.vision.face.FaceDetector;
-//import com.google.android.gms.vision.face.LargestFaceFocusingProcessor;
-//import com.google.firebase.auth.FirebaseAuth;
-//import com.google.firebase.auth.FirebaseUser;
-//import com.google.firebase.database.DataSnapshot;
-//import com.google.firebase.database.DatabaseError;
-//import com.google.firebase.database.DatabaseReference;
-//import com.google.firebase.database.FirebaseDatabase;
-//import com.google.firebase.database.ValueEventListener;
+import com.google.android.gms.vision.CameraSource;
+import com.google.android.gms.vision.Detector;
+import com.google.android.gms.vision.face.Face;
+import com.google.android.gms.vision.face.FaceDetector;
+import com.google.android.gms.vision.face.LargestFaceFocusingProcessor;
 
 import java.io.File;
 import java.io.IOException;
@@ -53,21 +42,17 @@ public class TripActivity extends AppCompatActivity {
     private final String tag = "TripActivity";
 
     private static final int PLAY_SERVICES_UNAVAILABLE_CODE = 9001;
-    // Both of these are in milliseconds
-    private static final int ALARM_DURATION = 8000;
-    private static final int ALARM_INTERVAL = 1000;
-
-    private TextureView textureView;
-    private ImageView imageView;
+    private static final int ALARM_DURATION_MILLISECONDS = 8000;
+    private static final int ALARM_INTERVAL_MILLISECONDS = 1000;
 
     private MediaPlayer mediaPlayer;
     private CountDownTimer alarmTimer;
 
     private Button pauseTripButton, resumeTripButton, endTripButton;
 
-//    private WokeFaceTracker faceTracker;
-//    private FaceDetector faceDetector;
-//    private CameraSource cameraSource = null;
+    private WokeFaceTracker faceTracker;
+    private FaceDetector faceDetector;
+    private CameraSource cameraSource = null;
     private CameraSourcePreview cameraPreview;
     private GraphicOverlay graphicOverlay;
 
@@ -83,22 +68,17 @@ public class TripActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_trip);
 
-        textureView = (TextureView) findViewById(R.id.mainTextureView);
-        imageView = (ImageView) findViewById(R.id.displayImageView);
         pauseTripButton = (Button) findViewById(R.id.pauseTripButton);
         resumeTripButton = (Button) findViewById(R.id.resumeTripButton);
         endTripButton = (Button) findViewById(R.id.endTripButton);
 
         // Initializes camera interface and surface texture view that shows camera feed
-//        cameraInterface = new CameraInterface(this, textureView);
-//        imageHandler = new ImageHandler(this, imageView);
+        cameraPreview = (CameraSourcePreview) findViewById(R.id.preview);
+        graphicOverlay = (GraphicOverlay) findViewById(R.id.faceOverlay);
+        cameraPreview.tripActivity = this;
+        createCameraSource();
 
-//        cameraPreview = (CameraSourcePreview) findViewById(R.id.preview);
-//        graphicOverlay = (GraphicOverlay) findViewById(R.id.faceOverlay);
-//        cameraPreview.tripActivity = this;
-//        createCameraSource();
-
-        // Firebase database write that a trip is starting
+        // Database write that a trip is starting
         FirebaseUser currentUser = firebaseAuth.getCurrentUser();
         if (currentUser != null) {
             String currentTime = Calendar.getInstance().getTime().toString();
@@ -123,55 +103,67 @@ public class TripActivity extends AppCompatActivity {
         }
     }
 
-//    @NonNull
-//    private FaceDetector createFaceDetector(Context context) {
-//        faceDetector = new FaceDetector.Builder(context)
-//                .setLandmarkType(FaceDetector.ALL_LANDMARKS)
-//                .setClassificationType(FaceDetector.ALL_CLASSIFICATIONS)
-//                .setTrackingEnabled(true)
-////                .setMode(FaceDetector.FAST_MODE)
-//                .setProminentFaceOnly(true)
-//                .setMinFaceSize(0.25f)
-//                .build();
-//
-//        faceTracker = new WokeFaceTracker(graphicOverlay, this);
-//        Detector.Processor<Face> processor = new LargestFaceFocusingProcessor.Builder(faceDetector, faceTracker).build();
-//        faceDetector.setProcessor(processor);
-//        return faceDetector;
-//    }
+    @NonNull
+    /**
+     * Instantiates the faceDetector instance variable with tracking enabled to speed up processing between frames,
+     * classification enabled to determine whether eyes are open or closed, prominent face only set to true to expect
+     * only one face in the image to speed up processing, landmark type to all landmarks to look for all facial
+     * features, and minimum face size to speed up processing by not looking for faces that are too small
+     */
+    private FaceDetector createFaceDetector(Context context) {
+        faceDetector = new FaceDetector.Builder(context).setTrackingEnabled(true)
+                                                        .setClassificationType(FaceDetector.ALL_CLASSIFICATIONS)
+                                                        .setProminentFaceOnly(true)
+                                                        .setLandmarkType(FaceDetector.ALL_LANDMARKS)
+                                                        .setMinFaceSize(0.25f)
+                                                        .build();
 
-    private void createCameraSource() {
-//        Context context = getApplicationContext();
-//        FaceDetector detector = createFaceDetector(context);
-//
-//        int facing = CameraSource.CAMERA_FACING_FRONT;
-//
-//        cameraSource = new CameraSource.Builder(context, detector)
-//                .setFacing(facing)
-//                .setRequestedPreviewSize(320, 240)
-//                .setRequestedFps(30.0f)
-//                .setAutoFocusEnabled(true)
-//                .build();
+        faceTracker = new WokeFaceTracker(graphicOverlay, this);
+        Detector.Processor<Face> processor = new LargestFaceFocusingProcessor
+                                                                    .Builder(faceDetector, faceTracker).build();
+        faceDetector.setProcessor(processor);
+        return faceDetector;
     }
 
+    /**
+     * Initializes the cameraSource instance variable with 30fps, 320x240 px resolution, facing front, and autofocus
+     * enabled. Also creates the FaceDetector object and passes that into the CameraSource
+     */
+    private void createCameraSource() {
+        Context context = getApplicationContext();
+        FaceDetector detector = createFaceDetector(context);
+
+        int facing = CameraSource.CAMERA_FACING_FRONT;
+
+        cameraSource = new CameraSource.Builder(context, detector)
+                .setFacing(facing)
+                .setRequestedPreviewSize(320, 240)
+                .setRequestedFps(30.0f)
+                .setAutoFocusEnabled(true)
+                .build();
+    }
+
+    /**
+     * Actually starts the cameraPreview, passing in the non-null cameraSource and graphicOverlay
+     */
     private void startCameraSource() {
-        // Checks if play services are available
-//        int code = GoogleApiAvailability.getInstance().isGooglePlayServicesAvailable(getApplicationContext());
-//        if (code != ConnectionResult.SUCCESS) {
-//            Dialog dlg = GoogleApiAvailability.getInstance().getErrorDialog(this,
-//                                                                            code, PLAY_SERVICES_UNAVAILABLE_CODE);
-//            dlg.show();
-//        }
-//
-//        if (cameraSource != null) {
-//            try {
-//                cameraPreview.start(cameraSource, graphicOverlay);
-//            } catch (IOException e) {
-//                Log.e(tag, "Unable to start camera source.", e);
-//                cameraSource.release();
-//                cameraSource = null;
-//            }
-//        }
+        // Checks if Google play services are available
+        int code = GoogleApiAvailability.getInstance().isGooglePlayServicesAvailable(getApplicationContext());
+        if (code != ConnectionResult.SUCCESS) {
+            Dialog dlg = GoogleApiAvailability.getInstance().getErrorDialog(this,
+                                                                            code, PLAY_SERVICES_UNAVAILABLE_CODE);
+            dlg.show();
+        }
+
+        if (cameraSource != null) {
+            try {
+                cameraPreview.start(cameraSource, graphicOverlay);
+            } catch (IOException e) {
+                Log.e(tag, "Unable to start camera source.", e);
+                cameraSource.release();
+                cameraSource = null;
+            }
+        }
     }
 
     @Override
@@ -188,23 +180,38 @@ public class TripActivity extends AppCompatActivity {
     protected void onDestroy() {
         super.onDestroy();
 
-//        if (cameraSource != null) {
-//            cameraSource.release();
-//        }
+        if (cameraSource != null) {
+            cameraSource.release();
+        }
+        if (cameraPreview != null) {
+            cameraPreview.release();
+        }
     }
 
+    /**
+     * Called when the "Pause Trip" button is pressed in the TripActivity.
+     * @param view "Pause Trip" button
+     */
     public void onPauseClicked(View view) {
         pauseTripButton.setVisibility(View.INVISIBLE);
         resumeTripButton.setVisibility(View.VISIBLE);
         endTripButton.setVisibility(View.VISIBLE);
     }
 
+    /**
+     * Called when the "Resume Trip" button is pressed in the TripActivity.
+     * @param view "Resume Trip" button
+     */
     public void onResumeClicked(View view) {
         pauseTripButton.setVisibility(View.VISIBLE);
         resumeTripButton.setVisibility(View.INVISIBLE);
         endTripButton.setVisibility(View.INVISIBLE);
     }
 
+    /**
+     * Called when the "End Trip" button is pressed in the TripActivity.
+     * @param view "End Trip" button
+     */
     public void onEndClicked(View view) {
         // Firebase database write for trip ending
         FirebaseUser currentUser = firebaseAuth.getCurrentUser();
@@ -230,10 +237,15 @@ public class TripActivity extends AppCompatActivity {
             Log.d(tag, "Couldn't write trip to Firebase because user isn't signed in");
         }
 
-        // Closes this activity
+        // Closes this instance of TripActivity
         finish();
     }
 
+    /**
+     * Called when an alarm goes off. Initializes the mediaPlayer to play the sound and begins playing it, starts a
+     * timer on a new thread to stop the alarm after ALARM_DURATION_MILLISECONDS, and writes to the database the time
+     * at which the alarm was started
+     */
     public void startAlarm() {
         Log.d(tag, "Call to Trip activity start alarm");
 
@@ -241,11 +253,11 @@ public class TripActivity extends AppCompatActivity {
         mediaPlayer = MediaPlayer.create(this, Settings.System.DEFAULT_ALARM_ALERT_URI);
         mediaPlayer.start();
 
-        // In main thread, starts the timer to turn the alarm off after ALARM_DURATION seconds
+        // In main thread, starts the timer to turn the alarm off after ALARM_DURATION_MILLISECONDS seconds
         new Handler(Looper.getMainLooper()).post(new Runnable() {
             @Override
             public void run() {
-                alarmTimer = new CountDownTimer(ALARM_DURATION, ALARM_INTERVAL) {
+                alarmTimer = new CountDownTimer(ALARM_DURATION_MILLISECONDS, ALARM_INTERVAL_MILLISECONDS) {
                     @Override
                     public void onTick(long millisUntilFinished) {
                     }
@@ -283,7 +295,14 @@ public class TripActivity extends AppCompatActivity {
             Log.d(tag, "Couldn't write trip to Firebase because user isn't signed in");
         }
     }
+
+    /**
+     * Called when an alarm is supposed to be stopped. Stops the mediaPlayer and writes to the database the time at
+     * which the alarm was stopped
+     */
     public void stopAlarm() {
+
+        // Stop the media player and alarm timer if they are not null
         if (mediaPlayer != null) {
             if (mediaPlayer.isPlaying()) {
                 mediaPlayer.stop();
@@ -297,6 +316,7 @@ public class TripActivity extends AppCompatActivity {
         }
         alarmTimer = null;
 
+        // Write to Firebase the time the alarm has ended
         FirebaseUser currentUser = firebaseAuth.getCurrentUser();
         if (currentUser != null && alarmStartTime != null) {
             final DatabaseReference databaseReference = database.getReference("trips/" + currentUser.getUid() +
@@ -315,27 +335,14 @@ public class TripActivity extends AppCompatActivity {
                 }
             });
         } else {
-            Log.d(tag, "Couldn't write alarm end to Firebase because user" +
-                    " isn't signed in or alarm has already ended");
+            Log.d(tag, "Couldn't write alarm ending to Firebase b/c user isn't signed in or alarm " +
+                    "has already ended");
         }
 
         alarmStartTime = null;
     }
+
     public MediaPlayer getMediaPlayer() {
         return mediaPlayer;
-    }
-
-    public static File getOutputMediaFile() {
-        File mediaStorageDir = new File(Environment.getExternalStorageDirectory(), "Woke");
-        if (!mediaStorageDir.exists()) {
-            if (!mediaStorageDir.mkdirs()) {
-                Log.d("TripActivity",  "Failed to create directory");
-                return null;
-            }
-        }
-        // Create a media file name
-        String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
-        File mediaFile = new File(mediaStorageDir.getPath() + File.separator + "IMG_" + timeStamp + ".jpg");
-        return mediaFile;
     }
 }

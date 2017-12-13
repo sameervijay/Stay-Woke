@@ -14,7 +14,7 @@
         android:background="@mipmap/pausebutton"
         android:fontFamily="sans-serif"
         android:onClick="onPauseClicked"
-        android:text="Pause Trip"
+        android:text="@string/pause_trip_literal_text"
         android:textColor="@color/common_google_signin_btn_text_dark_default"
         android:textSize="24sp"
         app:layout_constraintBottom_toBottomOf="parent"
@@ -29,7 +29,7 @@
         android:background="@mipmap/endbutton"
         android:fontFamily="sans-serif"
         android:onClick="onEndClicked"
-        android:text="End Trip"
+        android:text="@string/end_trip_literal_text"
         android:textColor="@color/common_google_signin_btn_text_dark_default"
         android:textSize="24sp"
         android:visibility="invisible"
@@ -45,7 +45,7 @@
         android:background="@mipmap/continuebutton"
         android:fontFamily="sans-serif"
         android:onClick="onResumeClicked"
-        android:text="Resume Trip"
+        android:text="@string/resume_trip_literal_text"
         android:textSize="36sp"
         android:visibility="invisible"
         app:layout_constraintBottom_toTopOf="@+id/endTripButton"
@@ -55,17 +55,6 @@
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintVertical_bias="1.0"/>
 
-
-    <Button
-        android:id="@+id/settingsButton"
-        android:layout_width="35dp"
-        android:layout_height="35dp"
-        android:layout_marginEnd="12dp"
-        android:layout_marginTop="12dp"
-        android:background="@mipmap/menuicon"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toTopOf="parent"/>
-
     <TextView
         android:id="@+id/continueTripTextView"
         android:layout_width="252dp"
@@ -73,7 +62,7 @@
         android:layout_marginBottom="50dp"
         android:layout_marginEnd="8dp"
         android:layout_marginStart="8dp"
-        android:text="CONTINUE TRIP"
+        android:text="@string/continue_trip_literal_text"
         android:textAlignment="center"
         android:textColor="@color/common_google_signin_btn_text_dark_focused"
         android:textSize="30sp"
@@ -103,16 +92,26 @@
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintVertical_bias="1.0"/>
 
-    <!--<edu.illinois.finalproject.camera.CameraSourcePreview-->
-        <!--android:id="@+id/preview"-->
-        <!--android:layout_width="match_parent"-->
-        <!--android:layout_height="match_parent">-->
+    <edu.illinois.finalproject.camera.CameraSourcePreview
+        android:id="@+id/preview"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
 
-        <!--<edu.illinois.finalproject.camera.GraphicOverlay-->
-            <!--android:id="@+id/faceOverlay"-->
-            <!--android:layout_width="match_parent"-->
-            <!--android:layout_height="match_parent" />-->
+        <edu.illinois.finalproject.camera.GraphicOverlay
+            android:id="@+id/faceOverlay"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
 
-    <!--</edu.illinois.finalproject.camera.CameraSourcePreview>-->
+    </edu.illinois.finalproject.camera.CameraSourcePreview>
+
+    <Button
+        android:id="@+id/settingsButton"
+        android:layout_width="35dp"
+        android:layout_height="35dp"
+        android:layout_marginEnd="12dp"
+        android:layout_marginTop="12dp"
+        android:background="@mipmap/menuicon"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent"/>
 
 </android.support.constraint.ConstraintLayout>

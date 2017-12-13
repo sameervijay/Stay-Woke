@@ -20,7 +20,7 @@ import android.graphics.Canvas;
 import android.util.AttributeSet;
 import android.view.View;
 
-//import com.google.android.gms.vision.CameraSource;
+import com.google.android.gms.vision.CameraSource;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -43,13 +43,14 @@ import java.util.Set;
  * from the preview's coordinate system to the view coordinate system.</li>
  * </ol>
  */
+// Following class derived from https://github.com/googlesamples/android-vision/blob/master/visionSamples/googly-eyes
 public class GraphicOverlay extends View {
     private final Object mLock = new Object();
     private int mPreviewWidth;
     private float mWidthScaleFactor = 1.0f;
     private int mPreviewHeight;
     private float mHeightScaleFactor = 1.0f;
-//    private int mFacing = CameraSource.CAMERA_FACING_BACK;
+    private int mFacing = CameraSource.CAMERA_FACING_BACK;
     private Set<Graphic> mGraphics = new HashSet<>();
 
     /**
@@ -98,12 +99,11 @@ public class GraphicOverlay extends View {
          * system.
          */
         public float translateX(float x) {
-            return 0;
-//            if (mOverlay.mFacing == CameraSource.CAMERA_FACING_FRONT) {
-//                return mOverlay.getWidth() - scaleX(x);
-//            } else {
-//                return scaleX(x);
-//            }
+            if (mOverlay.mFacing == CameraSource.CAMERA_FACING_FRONT) {
+                return mOverlay.getWidth() - scaleX(x);
+            } else {
+                return scaleX(x);
+            }
         }
 
         /**
@@ -161,7 +161,7 @@ public class GraphicOverlay extends View {
         synchronized (mLock) {
             mPreviewWidth = previewWidth;
             mPreviewHeight = previewHeight;
-//            mFacing = facing;
+            mFacing = facing;
         }
         postInvalidate();
     }

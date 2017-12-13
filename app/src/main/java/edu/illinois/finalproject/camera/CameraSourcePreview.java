@@ -27,7 +27,7 @@ import android.view.SurfaceView;
 import android.view.ViewGroup;
 
 import com.google.android.gms.common.images.Size;
-//import com.google.android.gms.vision.CameraSource;
+import com.google.android.gms.vision.CameraSource;
 
 import java.io.IOException;
 
@@ -43,7 +43,7 @@ public class CameraSourcePreview extends ViewGroup {
     private SurfaceView mSurfaceView;
     private boolean mStartRequested;
     private boolean mSurfaceAvailable;
-//    private CameraSource mCameraSource;
+    private CameraSource mCameraSource;
 
     private GraphicOverlay mOverlay;
 
@@ -60,58 +60,80 @@ public class CameraSourcePreview extends ViewGroup {
         addView(mSurfaceView);
     }
 
-//    public void start(CameraSource cameraSource) throws IOException {
-//        if (cameraSource == null) {
-//            stop();
-//        }
-//
-//        mCameraSource = cameraSource;
-//
-//        if (mCameraSource != null) {
-//            mStartRequested = true;
-//            startIfReady();
-//        }
-//    }
+    /**
+     * Initializes the cameraSource object
+     * @param cameraSource the cameraSource to set the instance variable mCameraSource equal to
+     * @throws IOException
+     */
+    public void start(CameraSource cameraSource) throws IOException {
+        if (cameraSource == null) {
+            stop();
+        }
 
-//    public void start(CameraSource cameraSource, GraphicOverlay overlay) throws IOException {
-//        mOverlay = overlay;
-//        start(cameraSource);
-//    }
-//
-//    public void stop() {
-//        if (mCameraSource != null) {
-//            mCameraSource.stop();
-//        }
-//    }
-//
-//    public void release() {
-//        if (mCameraSource != null) {
-//            mCameraSource.release();
-//            mCameraSource = null;
-//        }
-//    }
+        mCameraSource = cameraSource;
 
+        if (mCameraSource != null) {
+            mStartRequested = true;
+            startIfReady();
+        }
+    }
+
+    /**
+     * Overloaded version of the above start() function, but sets the instance variable mOverlay based on the
+     * GraphicOverlay that is passed in as a parameter
+     * @param cameraSource cameraSource object that is being started
+     * @param overlay graphic overlay object to set to the instance variable mOverlay
+     * @throws IOException
+     */
+    public void start(CameraSource cameraSource, GraphicOverlay overlay) throws IOException {
+        mOverlay = overlay;
+        start(cameraSource);
+    }
+
+    /**
+     * Called when the preview is stopped
+     */
+    public void stop() {
+        if (mCameraSource != null) {
+            mCameraSource.stop();
+        }
+    }
+
+    /**
+     * Called when the preview is officially done (when Trip Activity is closed)
+     */
+    public void release() {
+        if (mCameraSource != null) {
+            mCameraSource.release();
+            mCameraSource = null;
+        }
+    }
+
+    /**
+     * Starts the preview if start was requested and the surface is available
+     * @throws IOException
+     */
     private void startIfReady() throws IOException {
         if (mStartRequested && mSurfaceAvailable) {
             if (ActivityCompat.checkSelfPermission(tripActivity, Manifest.permission.CAMERA)
                                                     != PackageManager.PERMISSION_GRANTED) {
                 return;
             }
-//            mCameraSource.start(mSurfaceView.getHolder());
-//            if (mOverlay != null) {
-//                Size size = mCameraSource.getPreviewSize();
-//                int min = Math.min(size.getWidth(), size.getHeight());
-//                int max = Math.max(size.getWidth(), size.getHeight());
-//                if (isPortraitMode()) {
-//                    // Swap width and height sizes when in portrait, since it will be rotated by
-//                    // 90 degrees
-//                    mOverlay.setCameraInfo(min, max, mCameraSource.getCameraFacing());
-//                } else {
-//                    mOverlay.setCameraInfo(max, min, mCameraSource.getCameraFacing());
-//                }
-//                mOverlay.clear();
-//            }
-//            mStartRequested = false;
+            mCameraSource.start(mSurfaceView.getHolder());
+            if (mOverlay != null) {
+                Size size = mCameraSource.getPreviewSize();
+                int min = Math.min(size.getWidth(), size.getHeight());
+                int max = Math.max(size.getWidth(), size.getHeight());
+                if (isPortraitMode()) {
+                    // Swap width and height sizes when in portrait, since it will be rotated by
+                    // 90 degrees
+                    mOverlay.setCameraInfo(min, max, mCameraSource.getCameraFacing());
+                } else {
+                    mOverlay.setCameraInfo(max, min, mCameraSource.getCameraFacing());
+                }
+                mOverlay.clear();
+            }
+            mStartRequested = false;
         }
     }
 
@@ -140,13 +162,13 @@ public class CameraSourcePreview extends ViewGroup {
     protected void onLayout(boolean changed, int left, int top, int right, int bottom) {
         int previewWidth = 320;
         int previewHeight = 240;
-//        if (mCameraSource != null) {
-//            Size size = mCameraSource.getPreviewSize();
-//            if (size != null) {
-//                previewWidth = size.getWidth();
-//                previewHeight = size.getHeight();
-//            }
-//        }
+        if (mCameraSource != null) {
+            Size size = mCameraSource.getPreviewSize();
+            if (size != null) {
+                previewWidth = size.getWidth();
+                previewHeight = size.getHeight();
+            }
+        }
 
         // Swap width and height sizes when in portrait, since it will be rotated 90 degrees
         if (isPortraitMode()) {
@@ -194,6 +216,10 @@ public class CameraSourcePreview extends ViewGroup {
         }
     }
 
+    /**
+     * Checks if the device is in portrait mode
+     * @return boolean representing whether the device is in portrait mode
+     */
     private boolean isPortraitMode() {
         int orientation = mContext.getResources().getConfiguration().orientation;
         if (orientation == Configuration.ORIENTATION_LANDSCAPE) {

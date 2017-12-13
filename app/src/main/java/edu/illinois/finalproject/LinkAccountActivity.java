@@ -7,15 +7,6 @@ import android.view.View;
 import android.widget.TextView;
 import android.widget.Toast;
 
-//import com.google.firebase.FirebaseApp;
-//import com.google.firebase.auth.FirebaseAuth;
-//import com.google.firebase.auth.FirebaseUser;
-//import com.google.firebase.database.DataSnapshot;
-//import com.google.firebase.database.DatabaseError;
-//import com.google.firebase.database.DatabaseReference;
-//import com.google.firebase.database.FirebaseDatabase;
-//import com.google.firebase.database.ValueEventListener;
-
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DataSnapshot;
@@ -23,9 +14,6 @@ import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
-
-import java.util.ArrayList;
-import java.util.List;
 
 public class LinkAccountActivity extends AppCompatActivity {
     private final String tag = "LinkAccountActivity";
@@ -43,15 +31,26 @@ public class LinkAccountActivity extends AppCompatActivity {
         linkAccountTextView = (TextView) findViewById(R.id.linkAccountTextView);
     }
 
+    /**
+     * Called when the "Link Account" button is pressed. Reads in the email address of the user to be linked to,
+     * searches to see if there's an account with that email address, and links the accounts if there is
+     * @param view the "Link Account" button that was pressed
+     */
     public void onLinkRequestClicked(View view) {
         final String userInput = linkAccountTextView.getText().toString();
         FirebaseUser currentUser = firebaseAuth.getCurrentUser();
 
-        if (currentUser != null ) {
+        if (currentUser != null) {
+            // If the user enters their own email address, display a toast asking them to try again and return
+            if (currentUser.getEmail().equals(userInput)) {
+                Toast.makeText(this, "Please enter an email address that isn't your own",
+                        Toast.LENGTH_LONG).show();
+                return;
+            }
+
             final DatabaseReference databaseReference = database.getReference("users");
             final LinkAccountActivity activity = this;
             databaseReference.addListenerForSingleValueEvent(new ValueEventListener() {
-
                 @Override
                 public void onDataChange(DataSnapshot dataSnapshot) {
                     for (DataSnapshot user : dataSnapshot.getChildren()) {
@@ -83,11 +82,14 @@ public class LinkAccountActivity extends AppCompatActivity {
         } else {
             Log.d(tag, "User is not signed in");
         }
-
-
     }
 
-    public void writeLinkedUserToFirebase(final String linkedUserID) {
+    /**
+     * Actually does the database write for the child and parent. For the current user, adds a "child" key with value
+     * being the child's userID. For the child user, adds a "parent" key with value being the current user's userID
+     * @param linkedUserID the userID of the child to link the current user with
+     */
+    private void writeLinkedUserToFirebase(final String linkedUserID) {
         // Writes child for current user
         FirebaseUser currentUser = firebaseAuth.getCurrentUser();
         final DatabaseReference databaseReference = database.getReference("users/" + currentUser.getUid());

@@ -1,6 +1,8 @@
 package edu.illinois.finalproject;
 
 import android.content.Intent;
+import android.icu.text.SimpleDateFormat;
+import android.net.ParseException;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
@@ -8,6 +10,7 @@ import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
+import android.widget.Toast;
 
 //import com.firebase.ui.auth.AuthUI;
 //import com.firebase.ui.auth.IdpResponse;
@@ -25,25 +28,22 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 
-import org.w3c.dom.Text;
-
 import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 public class SettingsActivity extends AppCompatActivity {
     private final String tag = "SettingsActivity";
-    private String name, email, linkedEmail;
-    private boolean isSignedIn;
 
-    private Button signInButton, linkAccountButton, createAccountButton;
+    private Button signInButton, linkAccountButton;
     private TextView nameTextView, emailTextView;
     private TextView linkedToTextView, linkedTextView, lastTripTextView, durationTextView, alarmsTextView;
 
     private static final int RC_SIGN_IN = 123;
     private FirebaseAuth firebaseAuth;
     private FirebaseUser currentUser;
-    private FirebaseDatabase database = FirebaseDatabase.getInstance();
+    private FirebaseDatabase database;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -53,6 +53,7 @@ public class SettingsActivity extends AppCompatActivity {
 //        FirebaseApp.initializeApp(this);
         firebaseAuth = FirebaseAuth.getInstance();
         currentUser = firebaseAuth.getCurrentUser();
+        database = FirebaseDatabase.getInstance();
 
         signInButton = (Button) findViewById(R.id.signInButton);
         linkAccountButton = (Button) findViewById(R.id.linkAccountButton);
@@ -68,6 +69,11 @@ public class SettingsActivity extends AppCompatActivity {
         refreshCurrentUserDisplay();
     }
 
+    /**
+     * Called when the user taps the "Sign In/Out" button (the button is reused for both signing in and out, and the
+     * text on the button changes depending on whether currentUser is null
+     * @param view "Sign In/Out" button that was tapped
+     */
     public void onSignInOutClicked(View view) {
         if (currentUser == null) {
             // No user is currently signed in; try signing the user in
@@ -93,11 +99,20 @@ public class SettingsActivity extends AppCompatActivity {
         }
     }
 
+    /**
+     * Called when the user taps the "Link Account" button. Starts the LinkAccount activity
+     * @param view "Link Account" button that was tapped
+     */
     public void onLinkAccountClicked(View view) {
         Intent intent = new Intent(this, LinkAccountActivity.class);
         startActivity(intent);
     }
 
+    /**
+     * Updates the user display depending on whether a user is signed in and if an account has been linked with the
+     * user's account. If the user isn't signed in, the text views will ask the user to sign in. If an account has not
+     * been linked, the text views will ask the user to link an account
+     */
     public void refreshCurrentUserDisplay() {
         if (currentUser == null) {
             nameTextView.setText(R.string.default_sign_in_message);
@@ -157,8 +172,8 @@ public class SettingsActivity extends AppCompatActivity {
                             }
                         });
 
-                        // Displays the recent trip information of the linked user
-                        DatabaseReference childTrips = database.getReference("trips/" + childUserID);
+                        // Displays the most recent trip information of the linked user
+                        final DatabaseReference childTrips = database.getReference("trips/" + childUserID);
                         childTrips.addListenerForSingleValueEvent(new ValueEventListener() {
                             @Override
                             public void onDataChange(DataSnapshot dataSnapshot) {
@@ -168,10 +183,27 @@ public class SettingsActivity extends AppCompatActivity {
                                     // If the linked user has not gone on any trips yet, pass in null for trips
                                     updateLinkedAccountInfo(null);
                                 } else {
+                                    DataSnapshot latestSnapshot = null;
+                                    long latestTime = 0;
                                     for (DataSnapshot childTrip : dataSnapshot.getChildren()) {
-                                        updateLinkedAccountInfo(childTrip);
-                                        break;
+                                        SimpleDateFormat dateFormat = new SimpleDateFormat(
+                                                                        "EEE MMM dd HH:mm:ss z yyyy");
+                                        try {
+                                            Date date = dateFormat.parse(childTrip.getKey());
+                                            long milliseconds = date.getTime();
+
+                                            if (milliseconds > latestTime) {
+                                                latestTime = milliseconds;
+                                                latestSnapshot = childTrip;
+                                            }
+                                            System.out.println("Date in milliseconds: " + milliseconds);
+                                        } catch (java.text.ParseException e) {
+                                            e.printStackTrace();
+                                        }
                                     }
+
+                                    // latestSnapshot will be null if there have been no trips
+                                    updateLinkedAccountInfo(latestSnapshot);
                                 }
                             }
 
@@ -189,6 +221,10 @@ public class SettingsActivity extends AppCompatActivity {
         }
     }
 
+    /**
+     * Displays the information on the linked account's latest trip
+     * @param dataSnapshot contains the linked account's latest trip; includes start time, end time, and alarms set off
+     */
     public void updateLinkedAccountInfo(DataSnapshot dataSnapshot) {
         if (dataSnapshot == null) {
             lastTripTextView.setText(R.string.lastTripEmptyText);
@@ -248,7 +284,11 @@ public class SettingsActivity extends AppCompatActivity {
 
                 refreshCurrentUserDisplay();
             } else {
-                // Sign in failed, check response for error code
+                Log.d(tag, "Sign in failed");
+
+                // Display a toast saying the sign in attempt failed
+                Toast.makeText(this, "The sign in attempt failed. Please try again",
+                        Toast.LENGTH_LONG).show();
             }
         }
     }
