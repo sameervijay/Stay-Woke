@@ -2,6 +2,7 @@ package edu.illinois.finalproject;
 
 import android.app.Dialog;
 import android.content.Context;
+import android.content.Intent;
 import android.media.MediaPlayer;
 import android.os.CountDownTimer;
 import android.os.Handler;
@@ -174,7 +175,9 @@ public class TripActivity extends AppCompatActivity {
     @Override
     protected void onPause() {
         super.onPause();
-//        cameraPreview.stop();
+        if (cameraPreview != null) {
+            cameraPreview.stop();
+        }
     }
     @Override
     protected void onDestroy() {
@@ -183,9 +186,9 @@ public class TripActivity extends AppCompatActivity {
         if (cameraSource != null) {
             cameraSource.release();
         }
-        if (cameraPreview != null) {
-            cameraPreview.release();
-        }
+//        if (cameraPreview != null) {
+//            cameraPreview.release();
+//        }
     }
 
     /**
@@ -196,6 +199,11 @@ public class TripActivity extends AppCompatActivity {
         pauseTripButton.setVisibility(View.INVISIBLE);
         resumeTripButton.setVisibility(View.VISIBLE);
         endTripButton.setVisibility(View.VISIBLE);
+
+        if (cameraPreview != null) {
+            cameraPreview.stop();
+        }
+        stopAlarm();
     }
 
     /**
@@ -206,6 +214,8 @@ public class TripActivity extends AppCompatActivity {
         pauseTripButton.setVisibility(View.VISIBLE);
         resumeTripButton.setVisibility(View.INVISIBLE);
         endTripButton.setVisibility(View.INVISIBLE);
+
+        startCameraSource();
     }
 
     /**
@@ -239,6 +249,25 @@ public class TripActivity extends AppCompatActivity {
 
         // Closes this instance of TripActivity
         finish();
+    }
+
+    /**
+     * Called when the settings button is clicked
+     * @param view settings button that was clicked
+     */
+    public void onSettingsClicked(View view) {
+        Intent intent = new Intent(this, SettingsActivity.class);
+        startActivity(intent);
+
+        if (cameraPreview != null) {
+            cameraPreview.stop();
+        }
+    }
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if (cameraPreview != null) {
+            startCameraSource();
+        }
     }
 
     /**
