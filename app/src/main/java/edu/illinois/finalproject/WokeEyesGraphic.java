@@ -52,6 +52,12 @@ public class WokeEyesGraphic extends GraphicOverlay.Graphic {
     }
 
     @Override
+    /**
+     * Prepares for drawing the bounding boxes and calls the method that actually draws them; also calculates what
+     * size the boxes should be
+     *
+     * @param canvas Canvas on which the bounding boxes will be drawn
+     */
     public void draw(Canvas canvas) {
         PointF detectLeftPosition = leftPosition;
         PointF detectRightPosition = rightPosition;
@@ -68,7 +74,7 @@ public class WokeEyesGraphic extends GraphicOverlay.Graphic {
                 Math.pow(rightPosition.x - leftPosition.x, 2) + Math.pow(rightPosition.y - leftPosition.y, 2));
         float eyeRadius = EYE_RADIUS_PROPORTION * distance;
 
-        // Draws both eyes given positions and whetherthey're open
+        // Draws both eyes given positions and whether they're open
         drawEye(canvas, leftPosition, eyeRadius, leftOpen);
         drawEye(canvas, rightPosition, eyeRadius, rightOpen);
     }

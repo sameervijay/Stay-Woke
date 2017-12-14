@@ -35,6 +35,8 @@ import java.util.concurrent.TimeUnit;
 
 public class SettingsActivity extends AppCompatActivity {
     private final String tag = "SettingsActivity";
+    private static final int MILLISECONDS_IN_ONE_SECOND = 1000;
+    private static final int SECONDS_IN_ONE_MINUTE = 60;
 
     private Button signInButton, linkAccountButton;
     private TextView nameTextView, emailTextView;
@@ -50,7 +52,6 @@ public class SettingsActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_settings);
 
-//        FirebaseApp.initializeApp(this);
         firebaseAuth = FirebaseAuth.getInstance();
         currentUser = firebaseAuth.getCurrentUser();
         database = FirebaseDatabase.getInstance();
@@ -232,7 +233,7 @@ public class SettingsActivity extends AppCompatActivity {
             alarmsTextView.setText("");
         } else {
             // Gets the start time of the most recent trip and displays to user
-            String lastTripText = "Last Trip: " + dataSnapshot.getKey();
+            String lastTripText = getString(R.string.last_trip_text_literal) + dataSnapshot.getKey();
             lastTripTextView.setText(lastTripText);
 
             // Gets the duration of the most recent trip and displays to user
@@ -240,18 +241,34 @@ public class SettingsActivity extends AppCompatActivity {
                 Long startTime = (Long) dataSnapshot.child("start_time").getValue();
                 Long endTime = (Long) dataSnapshot.child("end_time").getValue();
 
-                String minutes = Long.toString(TimeUnit.MILLISECONDS.toMinutes(endTime - startTime));
+                // Did all of this by hand so that it rounds to the nearest minute;
+                // the built-in methods always round down
+                long durationSeconds = (endTime - startTime) / MILLISECONDS_IN_ONE_SECOND;
+                long minutes = durationSeconds / SECONDS_IN_ONE_MINUTE;
 
-                String durationText = "Duration: " + minutes + " minutes";
-                durationTextView.setText(durationText);
+                // 2 isn't a magic number because there's no potential
+                // good name for it; it's just the rounding constant
+                if (durationSeconds % SECONDS_IN_ONE_MINUTE >= SECONDS_IN_ONE_MINUTE / 2) {
+                    minutes++;
+                }
+
+                StringBuilder durationText = new StringBuilder(getString(R.string.duration_text_literal) +
+                                                                Long.toString(minutes));
+                if (minutes == 1) {
+                    durationText.append(getString(R.string.minute_text_literal));
+                } else {
+                    durationText.append(getString(R.string.minutes_text_literal));
+                }
+
+                durationTextView.setText(durationText.toString());
             } else {
                 durationTextView.setText(R.string.durationEmptyText);
             }
 
             // Gets the number of alarms set off during the most recent trip and displays to user
             if (dataSnapshot.hasChild("alarms")) {
-                long alarms = dataSnapshot.getChildrenCount();
-                String alarmsText = "Alarms: " + Long.toString(alarms);
+                long alarms = dataSnapshot.child("alarms").getChildrenCount();
+                String alarmsText = getString(R.string.alarms_text_literal) + Long.toString(alarms);
                 alarmsTextView.setText(alarmsText);
             } else {
                 alarmsTextView.setText(R.string.alarmsEmptyText);
@@ -260,6 +277,10 @@ public class SettingsActivity extends AppCompatActivity {
     }
 
     @Override
+    /**
+     * Called after the LinkAccountActivity finishes. Signs in the new user if there is one and writes the new user
+     * to the database. Also refreshes the user display with the new user's information
+     */
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
 
@@ -287,7 +308,7 @@ public class SettingsActivity extends AppCompatActivity {
                 Log.d(tag, "Sign in failed");
 
                 // Display a toast saying the sign in attempt failed
-                Toast.makeText(this, "The sign in attempt failed. Please try again",
+                Toast.makeText(this, R.string.sign_in_failed_display_text,
                         Toast.LENGTH_LONG).show();
             }
         }

@@ -44,6 +44,7 @@ import java.util.Set;
  * </ol>
  */
 // Following class derived from https://github.com/googlesamples/android-vision/blob/master/visionSamples/googly-eyes
+
 public class GraphicOverlay extends View {
     private final Object mLock = new Object();
     private int mPreviewWidth;

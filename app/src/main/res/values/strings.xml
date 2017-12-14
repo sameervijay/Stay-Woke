@@ -104,4 +104,11 @@
     <string name="continue_trip_literal_text">CONTINUE TRIP</string>
     <string name="start_trip_literal_text">Start Trip</string>
     <string name="tap_car_to_start_trip_literal_text">Tap Car to Start Trip</string>
+    <string name="app_title_stay_woke">Stay Woke</string>
+    <string name="last_trip_text_literal">Last Trip:</string>
+    <string name="duration_text_literal">Duration:</string>
+    <string name="minute_text_literal">minute</string>
+    <string name="minutes_text_literal">minutes</string>
+    <string name="alarms_text_literal">Alarms:</string>
+    <string name="sign_in_failed_display_text">The sign in attempt failed. Please try again</string>
 </resources>

@@ -36,19 +36,21 @@ public class MainActivity extends AppCompatActivity {
 
     // Toolbar code derived from: https://stackoverflow.com/questions/31231609/creating-a-button-in-android-toolbar
     @Override
+    /**
+     * Inflates the menu bar that contains the settings button
+     */
     public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
         getMenuInflater().inflate(R.menu.menu_main, menu);
         return true;
     }
 
     @Override
+    /**
+     * Called when the settings button in the toolbar is tapped. Creates an intent with the SettingsActivity
+     */
     public boolean onOptionsItemSelected(MenuItem item) {
         Intent intent = new Intent(this, SettingsActivity.class);
         startActivity(intent);
-
-        Log.d(logTag, "Menu was pressed");
-
         return super.onOptionsItemSelected(item);
     }
 }

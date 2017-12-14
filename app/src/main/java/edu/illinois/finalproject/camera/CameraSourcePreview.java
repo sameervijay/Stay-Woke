@@ -37,7 +37,7 @@ import edu.illinois.finalproject.TripActivity;
 // https://github.com/googlesamples/android-vision/blob/master/visionSamples/googly-eyes
 
 public class CameraSourcePreview extends ViewGroup {
-    private static final String TAG = "CameraSourcePreview";
+    private static final String tag = "CameraSourcePreview";
 
     private Context mContext;
     private SurfaceView mSurfaceView;
@@ -144,7 +144,7 @@ public class CameraSourcePreview extends ViewGroup {
             try {
                 startIfReady();
             } catch (IOException e) {
-                Log.e(TAG, "Could not start camera source.", e);
+                Log.e(tag, "Could not start camera source.", e);
             }
         }
 
@@ -159,6 +159,9 @@ public class CameraSourcePreview extends ViewGroup {
     }
 
     @Override
+    /**
+     * Sets up the camera preview dimensions and calls the method to start the preview
+     */
     protected void onLayout(boolean changed, int left, int top, int right, int bottom) {
         int previewWidth = 320;
         int previewHeight = 240;
@@ -212,7 +215,7 @@ public class CameraSourcePreview extends ViewGroup {
         try {
             startIfReady();
         } catch (IOException e) {
-            Log.e(TAG, "Could not start camera source.", e);
+            Log.e(tag, "Could not start camera source.", e);
         }
     }
 
@@ -229,7 +232,7 @@ public class CameraSourcePreview extends ViewGroup {
             return true;
         }
 
-        Log.d(TAG, "isPortraitMode returning false by default");
+        Log.d(tag, "isPortraitMode returning false by default");
         return false;
     }
 }

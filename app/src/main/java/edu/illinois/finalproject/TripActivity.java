@@ -30,11 +30,8 @@ import com.google.android.gms.vision.face.Face;
 import com.google.android.gms.vision.face.FaceDetector;
 import com.google.android.gms.vision.face.LargestFaceFocusingProcessor;
 
-import java.io.File;
 import java.io.IOException;
-import java.text.SimpleDateFormat;
 import java.util.Calendar;
-import java.util.Date;
 
 import edu.illinois.finalproject.camera.CameraSourcePreview;
 import edu.illinois.finalproject.camera.GraphicOverlay;
@@ -168,11 +165,17 @@ public class TripActivity extends AppCompatActivity {
     }
 
     @Override
+    /**
+     * Starts the camera preview again when the app is in the foreground
+     */
     protected void onResume() {
         super.onResume();
         startCameraSource();
     }
     @Override
+    /**
+     * Stops the cameraPreview when the app is in the background
+     */
     protected void onPause() {
         super.onPause();
         if (cameraPreview != null) {
@@ -180,6 +183,9 @@ public class TripActivity extends AppCompatActivity {
         }
     }
     @Override
+    /**
+     * Releases the cameraSource right before the activity is destroyed
+     */
     protected void onDestroy() {
         super.onDestroy();
 
