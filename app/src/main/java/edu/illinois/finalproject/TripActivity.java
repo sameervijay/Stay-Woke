@@ -1,14 +1,17 @@
 package edu.illinois.finalproject;
 
+import android.Manifest;
 import android.app.Dialog;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.media.MediaPlayer;
 import android.media.RingtoneManager;
 import android.os.CountDownTimer;
 import android.os.Handler;
 import android.os.Looper;
 import android.support.annotation.NonNull;
+import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -16,16 +19,17 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GoogleApiAvailability;
-import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.auth.FirebaseUser;
-import com.google.firebase.database.DataSnapshot;
-import com.google.firebase.database.DatabaseError;
-import com.google.firebase.database.DatabaseReference;
-import com.google.firebase.database.FirebaseDatabase;
-import com.google.firebase.database.ValueEventListener;
+//import com.google.firebase.auth.FirebaseAuth;
+//import com.google.firebase.auth.FirebaseUser;
+//import com.google.firebase.database.DataSnapshot;
+//import com.google.firebase.database.DatabaseError;
+//import com.google.firebase.database.DatabaseReference;
+//import com.google.firebase.database.FirebaseDatabase;
+//import com.google.firebase.database.ValueEventListener;
 import com.google.android.gms.vision.CameraSource;
 import com.google.android.gms.vision.Detector;
 import com.google.android.gms.vision.face.Face;
@@ -58,8 +62,8 @@ public class TripActivity extends AppCompatActivity {
     private CameraSourcePreview cameraPreview;
     private GraphicOverlay graphicOverlay;
 
-    private final FirebaseAuth firebaseAuth = FirebaseAuth.getInstance();
-    private final FirebaseDatabase database = FirebaseDatabase.getInstance();
+//    private final FirebaseAuth firebaseAuth = FirebaseAuth.getInstance();
+//    private final FirebaseDatabase database = FirebaseDatabase.getInstance();
     private String tripStartTime;
     private String alarmStartTime;
     private int alerts;
@@ -103,29 +107,34 @@ public class TripActivity extends AppCompatActivity {
         alerts = 0;
         startTimeLong = System.currentTimeMillis();
 
-        // Database write that a trip is starting
-        FirebaseUser currentUser = firebaseAuth.getCurrentUser();
-        if (currentUser != null) {
-            String currentTime = Calendar.getInstance().getTime().toString();
-            final DatabaseReference databaseReference = database.getReference("trips/" + currentUser.getUid()
-                                                                                    + "/" + currentTime);
-            tripStartTime = currentTime;
-
-            final long startTime = Calendar.getInstance().getTimeInMillis();
-            databaseReference.addListenerForSingleValueEvent(new ValueEventListener() {
-                @Override
-                public void onDataChange(DataSnapshot dataSnapshot) {
-                    databaseReference.child("start_time").setValue(startTime);
-                    databaseReference.child("in_progress").setValue(true);
-                }
-
-                @Override
-                public void onCancelled(DatabaseError databaseError) {
-                }
-            });
-        } else {
-            Log.d(tag, "Couldn't write trip to Firebase because user isn't signed in");
+        // Request camera permission if it has not already been granted
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this, new String[]{android.Manifest.permission.CAMERA}, 1);
         }
+
+        // Database write that a trip is starting
+//        FirebaseUser currentUser = firebaseAuth.getCurrentUser();
+//        if (currentUser != null) {
+//            String currentTime = Calendar.getInstance().getTime().toString();
+//            final DatabaseReference databaseReference = database.getReference("trips/" + currentUser.getUid()
+//                                                                                    + "/" + currentTime);
+//            tripStartTime = currentTime;
+//
+//            final long startTime = Calendar.getInstance().getTimeInMillis();
+//            databaseReference.addListenerForSingleValueEvent(new ValueEventListener() {
+//                @Override
+//                public void onDataChange(DataSnapshot dataSnapshot) {
+//                    databaseReference.child("start_time").setValue(startTime);
+//                    databaseReference.child("in_progress").setValue(true);
+//                }
+//
+//                @Override
+//                public void onCancelled(DatabaseError databaseError) {
+//                }
+//            });
+//        } else {
+//            Log.d(tag, "Couldn't write trip to Firebase because user isn't signed in");
+//        }
     }
 
     public void showNoFaceCalibrationMessage() {
@@ -306,28 +315,28 @@ public class TripActivity extends AppCompatActivity {
      */
     public void onEndClicked(View view) {
         // Firebase database write for trip ending
-        FirebaseUser currentUser = firebaseAuth.getCurrentUser();
-
-        if (currentUser != null && tripStartTime != null) {
-            final DatabaseReference databaseReference = database.getReference("trips/" + currentUser.getUid() +
-                    "/" + tripStartTime);
-            final long endTime = Calendar.getInstance().getTimeInMillis();
-            databaseReference.addListenerForSingleValueEvent(new ValueEventListener() {
-                @Override
-                public void onDataChange(DataSnapshot dataSnapshot) {
-                    databaseReference.child("end_time").setValue(endTime);
-                    databaseReference.child("in_progress").setValue(false);
-                }
-
-                @Override
-                public void onCancelled(DatabaseError databaseError) {
-                }
-            });
-
-            tripStartTime = null;
-        } else {
-            Log.d(tag, "Couldn't write trip to Firebase because user isn't signed in");
-        }
+//        FirebaseUser currentUser = firebaseAuth.getCurrentUser();
+//
+//        if (currentUser != null && tripStartTime != null) {
+//            final DatabaseReference databaseReference = database.getReference("trips/" + currentUser.getUid() +
+//                    "/" + tripStartTime);
+//            final long endTime = Calendar.getInstance().getTimeInMillis();
+//            databaseReference.addListenerForSingleValueEvent(new ValueEventListener() {
+//                @Override
+//                public void onDataChange(DataSnapshot dataSnapshot) {
+//                    databaseReference.child("end_time").setValue(endTime);
+//                    databaseReference.child("in_progress").setValue(false);
+//                }
+//
+//                @Override
+//                public void onCancelled(DatabaseError databaseError) {
+//                }
+//            });
+//
+//            tripStartTime = null;
+//        } else {
+//            Log.d(tag, "Couldn't write trip to Firebase because user isn't signed in");
+//        }
 
         // Closes this instance of TripActivity
         finish();
@@ -386,29 +395,29 @@ public class TripActivity extends AppCompatActivity {
         });
 
         // Firebase database write that alarm is starting
-        FirebaseUser currentUser = firebaseAuth.getCurrentUser();
-        if (currentUser != null) {
-            final DatabaseReference databaseReference = database.getReference("trips/" + currentUser.getUid() +
-                    "/" + tripStartTime +
-                    "/alarms");
-
-            final String currentTimeText = Calendar.getInstance().getTime().toString();
-            final long currentTimeNum = Calendar.getInstance().getTimeInMillis();
-            alarmStartTime = currentTimeText;
-
-            databaseReference.addListenerForSingleValueEvent(new ValueEventListener() {
-                @Override
-                public void onDataChange(DataSnapshot dataSnapshot) {
-                    databaseReference.child(currentTimeText).child("alarm_start").setValue(currentTimeNum);
-                }
-
-                @Override
-                public void onCancelled(DatabaseError databaseError) {
-                }
-            });
-        } else {
-            Log.d(tag, "Couldn't write trip to Firebase because user isn't signed in");
-        }
+//        FirebaseUser currentUser = firebaseAuth.getCurrentUser();
+//        if (currentUser != null) {
+//            final DatabaseReference databaseReference = database.getReference("trips/" + currentUser.getUid() +
+//                    "/" + tripStartTime +
+//                    "/alarms");
+//
+//            final String currentTimeText = Calendar.getInstance().getTime().toString();
+//            final long currentTimeNum = Calendar.getInstance().getTimeInMillis();
+//            alarmStartTime = currentTimeText;
+//
+//            databaseReference.addListenerForSingleValueEvent(new ValueEventListener() {
+//                @Override
+//                public void onDataChange(DataSnapshot dataSnapshot) {
+//                    databaseReference.child(currentTimeText).child("alarm_start").setValue(currentTimeNum);
+//                }
+//
+//                @Override
+//                public void onCancelled(DatabaseError databaseError) {
+//                }
+//            });
+//        } else {
+//            Log.d(tag, "Couldn't write trip to Firebase because user isn't signed in");
+//        }
     }
 
     /**
@@ -432,29 +441,41 @@ public class TripActivity extends AppCompatActivity {
         alarmTimer = null;
 
         // Write to Firebase the time the alarm has ended
-        FirebaseUser currentUser = firebaseAuth.getCurrentUser();
-        if (currentUser != null && alarmStartTime != null) {
-            final DatabaseReference databaseReference = database.getReference("trips/" + currentUser.getUid() +
-                    "/" + tripStartTime +
-                    "/alarms" + "/" + alarmStartTime);
-
-            final long currentTimeNum = Calendar.getInstance().getTimeInMillis();
-            databaseReference.addListenerForSingleValueEvent(new ValueEventListener() {
-                @Override
-                public void onDataChange(DataSnapshot dataSnapshot) {
-                    databaseReference.child("alarm_stop").setValue(currentTimeNum);
-                }
-
-                @Override
-                public void onCancelled(DatabaseError databaseError) {
-                }
-            });
-        } else {
-            Log.d(tag, "Couldn't write alarm ending to Firebase b/c user isn't signed in or alarm " +
-                    "has already ended");
-        }
+//        FirebaseUser currentUser = firebaseAuth.getCurrentUser();
+//        if (currentUser != null && alarmStartTime != null) {
+//            final DatabaseReference databaseReference = database.getReference("trips/" + currentUser.getUid() +
+//                    "/" + tripStartTime +
+//                    "/alarms" + "/" + alarmStartTime);
+//
+//            final long currentTimeNum = Calendar.getInstance().getTimeInMillis();
+//            databaseReference.addListenerForSingleValueEvent(new ValueEventListener() {
+//                @Override
+//                public void onDataChange(DataSnapshot dataSnapshot) {
+//                    databaseReference.child("alarm_stop").setValue(currentTimeNum);
+//                }
+//
+//                @Override
+//                public void onCancelled(DatabaseError databaseError) {
+//                }
+//            });
+//        } else {
+//            Log.d(tag, "Couldn't write alarm ending to Firebase b/c user isn't signed in or alarm " +
+//                    "has already ended");
+//        }
 
         alarmStartTime = null;
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String permissions[], @NonNull int[] grantResults) {
+        if (requestCode == 1) {
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_DENIED) {
+                finish();
+
+                Toast.makeText(this, "To begin eye detection, Stay Woke needs permission to use the camera. Please" +
+                        " try again.", Toast.LENGTH_LONG).show();
+            }
+        }
     }
 
     public MediaPlayer getMediaPlayer() {

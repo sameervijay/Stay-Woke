@@ -6,6 +6,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context="edu.illinois.finalproject.TripActivity">
+
     <Button
         android:id="@+id/pauseTripButton"
         android:layout_width="0dp"
@@ -52,7 +53,9 @@
     <edu.illinois.finalproject.camera.CameraSourcePreview
         android:id="@+id/preview"
         android:layout_width="match_parent"
-        android:layout_height="match_parent">
+        android:layout_height="match_parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
 
         <edu.illinois.finalproject.camera.GraphicOverlay
             android:id="@+id/faceOverlay"

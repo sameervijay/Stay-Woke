@@ -117,6 +117,7 @@ public class CameraSourcePreview extends ViewGroup {
         if (mStartRequested && mSurfaceAvailable) {
             if (ActivityCompat.checkSelfPermission(tripActivity, Manifest.permission.CAMERA)
                                                     != PackageManager.PERMISSION_GRANTED) {
+                System.out.println("COULDN'T INITIALIZE CAMERA BECAUSE PERMISSION NOT GRANTED");
                 return;
             }
             mCameraSource.start(mSurfaceView.getHolder());

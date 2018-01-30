@@ -62,12 +62,12 @@ public class WokeFaceTracker extends Tracker<Face> {
         eyesGraphic.deviceWidth = displayMetrics.widthPixels;
 
         SharedPreferences sharedPref = tripActivity.getPreferences(Context.MODE_PRIVATE);
-        if (sharedPref.contains("AlertDelay")) {
-            eyesClosedAlarmDelay = sharedPref.getInt("AlarmDelay", 1000);
-        }
-        if (sharedPref.contains("AlertForMissingEyes")) {
-            alertForMissingEyes = sharedPref.getBoolean("AlertForMissingEyes", true);
-        }
+//        if (sharedPref.contains("AlertDelay")) {
+//            eyesClosedAlarmDelay = (int) (1000 * sharedPref.getFloat("AlarmDelay", 1000));
+//        }
+//        if (sharedPref.contains("AlertForMissingEyes")) {
+//            alertForMissingEyes = sharedPref.getBoolean("AlertForMissingEyes", true);
+//        }
     }
 
     @Override
@@ -107,8 +107,8 @@ public class WokeFaceTracker extends Tracker<Face> {
         }
         avgRecentLeftOpenProb /= recentFrames.size();
         avgRecentRightOpenProb /= recentFrames.size();
-        System.out.println("LeftOpen: " + avgRecentLeftOpenProb);
-        System.out.println("RightOpen: " + avgRecentLeftOpenProb);
+//        System.out.println("LeftOpen: " + avgRecentLeftOpenProb);
+//        System.out.println("RightOpen: " + avgRecentLeftOpenProb);
 
         float leftOpenScore = face.getIsLeftEyeOpenProbability();
         float rightOpenScore = face.getIsRightEyeOpenProbability();
@@ -127,7 +127,6 @@ public class WokeFaceTracker extends Tracker<Face> {
         }
 
         if (tripActivity.isInCalibrationPeriod()) {
-
             // Checks if there have been 60 consecutive frames with a face; if so, exit calibration period
             if (recentFrames.size() >= CALIBRATION_FRAMES_TO_KEEP) {
                 eyesGraphic.inCalibrationMode = false;

@@ -52,9 +52,9 @@ public class SettingsActivity extends AppCompatActivity {
     private ToggleButton missingEyesToggleButton;
 
     private static final int RC_SIGN_IN = 123;
-    private FirebaseAuth firebaseAuth;
-    private FirebaseUser currentUser;
-    private FirebaseDatabase database;
+//    private FirebaseAuth firebaseAuth;
+//    private FirebaseUser currentUser;
+//    private FirebaseDatabase database;
 
     private SharedPreferences sharedPreferences;
 
@@ -63,9 +63,9 @@ public class SettingsActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_settings);
 
-        firebaseAuth = FirebaseAuth.getInstance();
-        currentUser = firebaseAuth.getCurrentUser();
-        database = FirebaseDatabase.getInstance();
+//        firebaseAuth = FirebaseAuth.getInstance();
+//        currentUser = firebaseAuth.getCurrentUser();
+//        database = FirebaseDatabase.getInstance();
 
         signInButton = (Button) findViewById(R.id.signInButton);
         linkAccountButton = (Button) findViewById(R.id.linkAccountButton);
@@ -85,6 +85,12 @@ public class SettingsActivity extends AppCompatActivity {
 
 //        Activity activity = (Activity) getApplicationContext();
         sharedPreferences = this.getPreferences(Context.MODE_PRIVATE);
+        if (sharedPreferences.contains("AlertDelay")) {
+            alertDelayEntryView.setText(Float.toString(sharedPreferences.getFloat("AlertDelay", 1.5f)));
+        }
+        if (sharedPreferences.contains("AlertForMissingEyes")) {
+            missingEyesToggleButton.setChecked(sharedPreferences.getBoolean("AlertForMissingEyes", true));
+        }
     }
 
     /**
@@ -93,27 +99,27 @@ public class SettingsActivity extends AppCompatActivity {
      * @param view "Sign In/Out" button that was tapped
      */
     public void onSignInOutClicked(View view) {
-        if (currentUser == null) {
-            // No user is currently signed in; try signing the user in
-            List<AuthUI.IdpConfig> providers = Arrays.asList(
-                    new AuthUI.IdpConfig.Builder(AuthUI.EMAIL_PROVIDER).build());
-
-            startActivityForResult(AuthUI.getInstance()
-                            .createSignInIntentBuilder()
-                            .setAvailableProviders(providers)
-                            .build(),
-                    RC_SIGN_IN);
-        } else {
-            // A user is currently signed in; sign them out
-            AuthUI.getInstance().signOut(this).addOnCompleteListener(new OnCompleteListener<Void>() {
-                public void onComplete(@NonNull Task<Void> task) {
-                    currentUser = firebaseAuth.getCurrentUser();
-
-                    // Refreshes display to current user depending on whether they're signed in
-                    refreshCurrentUserDisplay();
-                }
-            });
-        }
+//        if (currentUser == null) {
+//            // No user is currently signed in; try signing the user in
+//            List<AuthUI.IdpConfig> providers = Arrays.asList(
+//                    new AuthUI.IdpConfig.Builder(AuthUI.EMAIL_PROVIDER).build());
+//
+//            startActivityForResult(AuthUI.getInstance()
+//                            .createSignInIntentBuilder()
+//                            .setAvailableProviders(providers)
+//                            .build(),
+//                    RC_SIGN_IN);
+//        } else {
+//            // A user is currently signed in; sign them out
+//            AuthUI.getInstance().signOut(this).addOnCompleteListener(new OnCompleteListener<Void>() {
+//                public void onComplete(@NonNull Task<Void> task) {
+//                    currentUser = firebaseAuth.getCurrentUser();
+//
+//                    // Refreshes display to current user depending on whether they're signed in
+//                    refreshCurrentUserDisplay();
+//                }
+//            });
+//        }
     }
 
     /**
@@ -131,111 +137,111 @@ public class SettingsActivity extends AppCompatActivity {
      * been linked, the text views will ask the user to link an account
      */
     public void refreshCurrentUserDisplay() {
-        if (currentUser == null) {
-            nameTextView.setText(R.string.default_sign_in_message);
-            emailTextView.setText(R.string.noUserSignInText);
-
-            signInButton.setText(R.string.sign_in_text);
-            linkAccountButton.setVisibility(View.INVISIBLE);
-            linkedTextView.setVisibility(View.INVISIBLE);
-            linkedToTextView.setVisibility(View.INVISIBLE);
-
-            lastTripTextView.setVisibility(View.INVISIBLE);
-            durationTextView.setVisibility(View.INVISIBLE);
-            alarmsTextView.setVisibility(View.INVISIBLE);
-        } else {
-            // Sets the user's display name and email address
-            nameTextView.setText(currentUser.getDisplayName());
-            emailTextView.setText(currentUser.getEmail());
-
-            // Changes text to "Sign In" as opposed to "Sign Out", and displays link account button
-            signInButton.setText(R.string.sign_out_text);
-            linkAccountButton.setVisibility(View.VISIBLE);
-
-            // Makes all the linked account views visible
-            linkAccountButton.setVisibility(View.VISIBLE);
-            linkedTextView.setVisibility(View.VISIBLE);
-            linkedToTextView.setVisibility(View.VISIBLE);
-
-            lastTripTextView.setVisibility(View.VISIBLE);
-            durationTextView.setVisibility(View.VISIBLE);
-            alarmsTextView.setVisibility(View.VISIBLE);
-
-            final DatabaseReference userDatabaseReference = database.getReference("users/" +
-                                                                                    currentUser.getUid() + "/child");
-            userDatabaseReference.addListenerForSingleValueEvent(new ValueEventListener() {
-                @Override
-                public void onDataChange(DataSnapshot dataSnapshot) {
-                    if (dataSnapshot.getValue() == null) {
-                        // If the user has no linked children, remove the linked user text views
-                        linkedTextView.setText(R.string.linkedAccountsEmpty);
-
-                        lastTripTextView.setVisibility(View.INVISIBLE);
-                        durationTextView.setVisibility(View.INVISIBLE);
-                        alarmsTextView.setVisibility(View.INVISIBLE);
-                    } else {
-                        String childUserID = (String) dataSnapshot.getValue();
-
-                        // Gets the linked user's email address using their User ID
-                        DatabaseReference childEmail = database.getReference("users/" + childUserID + "/email");
-                        childEmail.addListenerForSingleValueEvent(new ValueEventListener() {
-                            @Override
-                            public void onDataChange(DataSnapshot dataSnapshot) {
-                                linkedTextView.setText((String) dataSnapshot.getValue());
-                            }
-
-                            @Override
-                            public void onCancelled(DatabaseError databaseError) {
-                            }
-                        });
-
-                        // Displays the most recent trip information of the linked user
-                        final DatabaseReference childTrips = database.getReference("trips/" + childUserID);
-                        childTrips.addListenerForSingleValueEvent(new ValueEventListener() {
-                            @Override
-                            public void onDataChange(DataSnapshot dataSnapshot) {
-                                if (dataSnapshot.getValue() == null) {
-                                    Log.d(tag, "Linked user has not gone on any trips");
-
-                                    // If the linked user has not gone on any trips yet, pass in null for trips
-                                    updateLinkedAccountInfo(null);
-                                } else {
-                                    DataSnapshot latestSnapshot = null;
-                                    long latestTime = 0;
-                                    for (DataSnapshot childTrip : dataSnapshot.getChildren()) {
-                                        SimpleDateFormat dateFormat = new SimpleDateFormat(
-                                                                        "EEE MMM dd HH:mm:ss z yyyy");
-                                        try {
-                                            Date date = dateFormat.parse(childTrip.getKey());
-                                            long milliseconds = date.getTime();
-
-                                            if (milliseconds > latestTime) {
-                                                latestTime = milliseconds;
-                                                latestSnapshot = childTrip;
-                                            }
-                                            System.out.println("Date in milliseconds: " + milliseconds);
-                                        } catch (java.text.ParseException e) {
-                                            e.printStackTrace();
-                                        }
-                                    }
-
-                                    // latestSnapshot will be null if there have been no trips
-                                    updateLinkedAccountInfo(latestSnapshot);
-                                }
-                            }
-
-                            @Override
-                            public void onCancelled(DatabaseError databaseError) {
-                            }
-                        });
-                    }
-                }
-
-                @Override
-                public void onCancelled(DatabaseError databaseError) {
-                }
-            });
-        }
+//        if (currentUser == null) {
+//            nameTextView.setText(R.string.default_sign_in_message);
+//            emailTextView.setText(R.string.noUserSignInText);
+//
+//            signInButton.setText(R.string.sign_in_text);
+//            linkAccountButton.setVisibility(View.INVISIBLE);
+//            linkedTextView.setVisibility(View.INVISIBLE);
+//            linkedToTextView.setVisibility(View.INVISIBLE);
+//
+//            lastTripTextView.setVisibility(View.INVISIBLE);
+//            durationTextView.setVisibility(View.INVISIBLE);
+//            alarmsTextView.setVisibility(View.INVISIBLE);
+//        } else {
+//            // Sets the user's display name and email address
+//            nameTextView.setText(currentUser.getDisplayName());
+//            emailTextView.setText(currentUser.getEmail());
+//
+//            // Changes text to "Sign In" as opposed to "Sign Out", and displays link account button
+//            signInButton.setText(R.string.sign_out_text);
+//            linkAccountButton.setVisibility(View.VISIBLE);
+//
+//            // Makes all the linked account views visible
+//            linkAccountButton.setVisibility(View.VISIBLE);
+//            linkedTextView.setVisibility(View.VISIBLE);
+//            linkedToTextView.setVisibility(View.VISIBLE);
+//
+//            lastTripTextView.setVisibility(View.VISIBLE);
+//            durationTextView.setVisibility(View.VISIBLE);
+//            alarmsTextView.setVisibility(View.VISIBLE);
+//
+//            final DatabaseReference userDatabaseReference = database.getReference("users/" +
+//                                                                                    currentUser.getUid() + "/child");
+//            userDatabaseReference.addListenerForSingleValueEvent(new ValueEventListener() {
+//                @Override
+//                public void onDataChange(DataSnapshot dataSnapshot) {
+//                    if (dataSnapshot.getValue() == null) {
+//                        // If the user has no linked children, remove the linked user text views
+//                        linkedTextView.setText(R.string.linkedAccountsEmpty);
+//
+//                        lastTripTextView.setVisibility(View.INVISIBLE);
+//                        durationTextView.setVisibility(View.INVISIBLE);
+//                        alarmsTextView.setVisibility(View.INVISIBLE);
+//                    } else {
+//                        String childUserID = (String) dataSnapshot.getValue();
+//
+//                        // Gets the linked user's email address using their User ID
+//                        DatabaseReference childEmail = database.getReference("users/" + childUserID + "/email");
+//                        childEmail.addListenerForSingleValueEvent(new ValueEventListener() {
+//                            @Override
+//                            public void onDataChange(DataSnapshot dataSnapshot) {
+//                                linkedTextView.setText((String) dataSnapshot.getValue());
+//                            }
+//
+//                            @Override
+//                            public void onCancelled(DatabaseError databaseError) {
+//                            }
+//                        });
+//
+//                        // Displays the most recent trip information of the linked user
+//                        final DatabaseReference childTrips = database.getReference("trips/" + childUserID);
+//                        childTrips.addListenerForSingleValueEvent(new ValueEventListener() {
+//                            @Override
+//                            public void onDataChange(DataSnapshot dataSnapshot) {
+//                                if (dataSnapshot.getValue() == null) {
+//                                    Log.d(tag, "Linked user has not gone on any trips");
+//
+//                                    // If the linked user has not gone on any trips yet, pass in null for trips
+//                                    updateLinkedAccountInfo(null);
+//                                } else {
+//                                    DataSnapshot latestSnapshot = null;
+//                                    long latestTime = 0;
+//                                    for (DataSnapshot childTrip : dataSnapshot.getChildren()) {
+//                                        SimpleDateFormat dateFormat = new SimpleDateFormat(
+//                                                                        "EEE MMM dd HH:mm:ss z yyyy");
+//                                        try {
+//                                            Date date = dateFormat.parse(childTrip.getKey());
+//                                            long milliseconds = date.getTime();
+//
+//                                            if (milliseconds > latestTime) {
+//                                                latestTime = milliseconds;
+//                                                latestSnapshot = childTrip;
+//                                            }
+//                                            System.out.println("Date in milliseconds: " + milliseconds);
+//                                        } catch (java.text.ParseException e) {
+//                                            e.printStackTrace();
+//                                        }
+//                                    }
+//
+//                                    // latestSnapshot will be null if there have been no trips
+//                                    updateLinkedAccountInfo(latestSnapshot);
+//                                }
+//                            }
+//
+//                            @Override
+//                            public void onCancelled(DatabaseError databaseError) {
+//                            }
+//                        });
+//                    }
+//                }
+//
+//                @Override
+//                public void onCancelled(DatabaseError databaseError) {
+//                }
+//            });
+//        }
     }
 
     /**
@@ -243,53 +249,53 @@ public class SettingsActivity extends AppCompatActivity {
      * @param dataSnapshot contains the linked account's latest trip; includes start time, end time, and alarms set off
      */
     public void updateLinkedAccountInfo(DataSnapshot dataSnapshot) {
-        if (dataSnapshot == null) {
-            lastTripTextView.setText(R.string.lastTripEmptyText);
-            durationTextView.setText("");
-            alarmsTextView.setText("");
-        } else {
-            // Gets the start time of the most recent trip and displays to user
-            String lastTripText = getString(R.string.last_trip_text_literal) + dataSnapshot.getKey();
-            lastTripTextView.setText(lastTripText);
-
-            // Gets the duration of the most recent trip and displays to user
-            if (dataSnapshot.hasChild("start_time") && dataSnapshot.hasChild("end_time")) {
-                Long startTime = (Long) dataSnapshot.child("start_time").getValue();
-                Long endTime = (Long) dataSnapshot.child("end_time").getValue();
-
-                // Did all of this by hand so that it rounds to the nearest minute;
-                // the built-in methods always round down
-                long durationSeconds = (endTime - startTime) / MILLISECONDS_IN_ONE_SECOND;
-                long minutes = durationSeconds / SECONDS_IN_ONE_MINUTE;
-
-                // 2 isn't a magic number because there's no potential
-                // good name for it; it's just the rounding constant
-                if (durationSeconds % SECONDS_IN_ONE_MINUTE >= SECONDS_IN_ONE_MINUTE / 2) {
-                    minutes++;
-                }
-
-                StringBuilder durationText = new StringBuilder(getString(R.string.duration_text_literal) +
-                                                                Long.toString(minutes));
-                if (minutes == 1) {
-                    durationText.append(getString(R.string.minute_text_literal));
-                } else {
-                    durationText.append(getString(R.string.minutes_text_literal));
-                }
-
-                durationTextView.setText(durationText.toString());
-            } else {
-                durationTextView.setText(R.string.durationEmptyText);
-            }
-
-            // Gets the number of alarms set off during the most recent trip and displays to user
-            if (dataSnapshot.hasChild("alarms")) {
-                long alarms = dataSnapshot.child("alarms").getChildrenCount();
-                String alarmsText = getString(R.string.alarms_text_literal) + Long.toString(alarms);
-                alarmsTextView.setText(alarmsText);
-            } else {
-                alarmsTextView.setText(R.string.alarmsEmptyText);
-            }
-        }
+//        if (dataSnapshot == null) {
+//            lastTripTextView.setText(R.string.lastTripEmptyText);
+//            durationTextView.setText("");
+//            alarmsTextView.setText("");
+//        } else {
+//            // Gets the start time of the most recent trip and displays to user
+//            String lastTripText = getString(R.string.last_trip_text_literal) + dataSnapshot.getKey();
+//            lastTripTextView.setText(lastTripText);
+//
+//            // Gets the duration of the most recent trip and displays to user
+//            if (dataSnapshot.hasChild("start_time") && dataSnapshot.hasChild("end_time")) {
+//                Long startTime = (Long) dataSnapshot.child("start_time").getValue();
+//                Long endTime = (Long) dataSnapshot.child("end_time").getValue();
+//
+//                // Did all of this by hand so that it rounds to the nearest minute;
+//                // the built-in methods always round down
+//                long durationSeconds = (endTime - startTime) / MILLISECONDS_IN_ONE_SECOND;
+//                long minutes = durationSeconds / SECONDS_IN_ONE_MINUTE;
+//
+//                // 2 isn't a magic number because there's no potential
+//                // good name for it; it's just the rounding constant
+//                if (durationSeconds % SECONDS_IN_ONE_MINUTE >= SECONDS_IN_ONE_MINUTE / 2) {
+//                    minutes++;
+//                }
+//
+//                StringBuilder durationText = new StringBuilder(getString(R.string.duration_text_literal) +
+//                                                                Long.toString(minutes));
+//                if (minutes == 1) {
+//                    durationText.append(getString(R.string.minute_text_literal));
+//                } else {
+//                    durationText.append(getString(R.string.minutes_text_literal));
+//                }
+//
+//                durationTextView.setText(durationText.toString());
+//            } else {
+//                durationTextView.setText(R.string.durationEmptyText);
+//            }
+//
+//            // Gets the number of alarms set off during the most recent trip and displays to user
+//            if (dataSnapshot.hasChild("alarms")) {
+//                long alarms = dataSnapshot.child("alarms").getChildrenCount();
+//                String alarmsText = getString(R.string.alarms_text_literal) + Long.toString(alarms);
+//                alarmsTextView.setText(alarmsText);
+//            } else {
+//                alarmsTextView.setText(R.string.alarmsEmptyText);
+//            }
+//        }
     }
 
     @Override
@@ -298,9 +304,9 @@ public class SettingsActivity extends AppCompatActivity {
 
         SharedPreferences.Editor editor = sharedPreferences.edit();
 
-        int alertDelay = Integer.parseInt((String) alertDelayEntryView.getText());
+        float alertDelay = Float.parseFloat(alertDelayEntryView.getText().toString());
         if (alertDelay > 0 && alertDelay <= 8) {
-            editor.putInt("AlertDelay", alertDelay);
+            editor.putFloat("AlertDelay", alertDelay);
         }
 
         editor.putBoolean("AlertForMissingEyes", missingEyesToggleButton.isChecked());
@@ -312,7 +318,7 @@ public class SettingsActivity extends AppCompatActivity {
      * Inflates the menu bar that contains the settings button
      */
     public boolean onCreateOptionsMenu(Menu menu) {
-        getMenuInflater().inflate(R.menu.menu_main, menu);
+        getMenuInflater().inflate(R.menu.menu_settings, menu);
         return true;
     }
 
@@ -321,8 +327,7 @@ public class SettingsActivity extends AppCompatActivity {
      * Called when the settings button in the toolbar is tapped. Creates an intent with the SettingsActivity
      */
     public boolean onOptionsItemSelected(MenuItem item) {
-        Intent intent = new Intent(this, SettingsActivity.class);
-        startActivity(intent);
+        finish();
         return super.onOptionsItemSelected(item);
     }
 
@@ -334,33 +339,33 @@ public class SettingsActivity extends AppCompatActivity {
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
 
-        if (requestCode == RC_SIGN_IN) {
-            IdpResponse response = IdpResponse.fromResultIntent(data);
-            if (resultCode == RESULT_OK) {
-                // Successfully signed in
-                currentUser = FirebaseAuth.getInstance().getCurrentUser();
-
-                // Writes the new user to the database with their email address (so they can be found for linking)
-                final DatabaseReference newUserReference = database.getReference("users/" + currentUser.getUid());
-                newUserReference.addListenerForSingleValueEvent(new ValueEventListener() {
-                    @Override
-                    public void onDataChange(DataSnapshot dataSnapshot) {
-                        newUserReference.child("email").setValue(currentUser.getEmail());
-                    }
-
-                    @Override
-                    public void onCancelled(DatabaseError databaseError) {
-                    }
-                });
-
-                refreshCurrentUserDisplay();
-            } else {
-                Log.d(tag, "Sign in failed");
-
-                // Display a toast saying the sign in attempt failed
-                Toast.makeText(this, R.string.sign_in_failed_display_text,
-                        Toast.LENGTH_LONG).show();
-            }
-        }
+//        if (requestCode == RC_SIGN_IN) {
+//            IdpResponse response = IdpResponse.fromResultIntent(data);
+//            if (resultCode == RESULT_OK) {
+//                // Successfully signed in
+//                currentUser = FirebaseAuth.getInstance().getCurrentUser();
+//
+//                // Writes the new user to the database with their email address (so they can be found for linking)
+//                final DatabaseReference newUserReference = database.getReference("users/" + currentUser.getUid());
+//                newUserReference.addListenerForSingleValueEvent(new ValueEventListener() {
+//                    @Override
+//                    public void onDataChange(DataSnapshot dataSnapshot) {
+//                        newUserReference.child("email").setValue(currentUser.getEmail());
+//                    }
+//
+//                    @Override
+//                    public void onCancelled(DatabaseError databaseError) {
+//                    }
+//                });
+//
+//                refreshCurrentUserDisplay();
+//            } else {
+//                Log.d(tag, "Sign in failed");
+//
+//                // Display a toast saying the sign in attempt failed
+//                Toast.makeText(this, R.string.sign_in_failed_display_text,
+//                        Toast.LENGTH_LONG).show();
+//            }
+//        }
     }
 }
