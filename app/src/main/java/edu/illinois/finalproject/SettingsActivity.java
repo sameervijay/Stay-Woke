@@ -1,16 +1,22 @@
 package edu.illinois.finalproject;
 
+import android.app.Activity;
+import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.icu.text.SimpleDateFormat;
 import android.net.ParseException;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
+import android.widget.ToggleButton;
 
 //import com.firebase.ui.auth.AuthUI;
 //import com.firebase.ui.auth.IdpResponse;
@@ -42,10 +48,15 @@ public class SettingsActivity extends AppCompatActivity {
     private TextView nameTextView, emailTextView;
     private TextView linkedToTextView, linkedTextView, lastTripTextView, durationTextView, alarmsTextView;
 
+    private TextView alertDelayEntryView;
+    private ToggleButton missingEyesToggleButton;
+
     private static final int RC_SIGN_IN = 123;
     private FirebaseAuth firebaseAuth;
     private FirebaseUser currentUser;
     private FirebaseDatabase database;
+
+    private SharedPreferences sharedPreferences;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -67,7 +78,13 @@ public class SettingsActivity extends AppCompatActivity {
         durationTextView = (TextView) findViewById(R.id.durationTextView);
         alarmsTextView = (TextView) findViewById(R.id.alarmsTextView);
 
-        refreshCurrentUserDisplay();
+        alertDelayEntryView = (TextView) findViewById(R.id.alertDelayEntryView);
+        missingEyesToggleButton = (ToggleButton) findViewById(R.id.missingEyesToggleButton);
+
+//        refreshCurrentUserDisplay();
+
+//        Activity activity = (Activity) getApplicationContext();
+        sharedPreferences = this.getPreferences(Context.MODE_PRIVATE);
     }
 
     /**
@@ -88,15 +105,14 @@ public class SettingsActivity extends AppCompatActivity {
                     RC_SIGN_IN);
         } else {
             // A user is currently signed in; sign them out
-            AuthUI.getInstance().signOut(this)
-                    .addOnCompleteListener(new OnCompleteListener<Void>() {
-                        public void onComplete(@NonNull Task<Void> task) {
-                            currentUser = firebaseAuth.getCurrentUser();
+            AuthUI.getInstance().signOut(this).addOnCompleteListener(new OnCompleteListener<Void>() {
+                public void onComplete(@NonNull Task<Void> task) {
+                    currentUser = firebaseAuth.getCurrentUser();
 
-                            // Refreshes display to current user depending on whether they're signed in
-                            refreshCurrentUserDisplay();
-                        }
-                    });
+                    // Refreshes display to current user depending on whether they're signed in
+                    refreshCurrentUserDisplay();
+                }
+            });
         }
     }
 
@@ -274,6 +290,40 @@ public class SettingsActivity extends AppCompatActivity {
                 alarmsTextView.setText(R.string.alarmsEmptyText);
             }
         }
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+
+        SharedPreferences.Editor editor = sharedPreferences.edit();
+
+        int alertDelay = Integer.parseInt((String) alertDelayEntryView.getText());
+        if (alertDelay > 0 && alertDelay <= 8) {
+            editor.putInt("AlertDelay", alertDelay);
+        }
+
+        editor.putBoolean("AlertForMissingEyes", missingEyesToggleButton.isChecked());
+        editor.apply();
+    }
+
+    @Override
+    /**
+     * Inflates the menu bar that contains the settings button
+     */
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.menu_main, menu);
+        return true;
+    }
+
+    @Override
+    /**
+     * Called when the settings button in the toolbar is tapped. Creates an intent with the SettingsActivity
+     */
+    public boolean onOptionsItemSelected(MenuItem item) {
+        Intent intent = new Intent(this, SettingsActivity.class);
+        startActivity(intent);
+        return super.onOptionsItemSelected(item);
     }
 
     @Override

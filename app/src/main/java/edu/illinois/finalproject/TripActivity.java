@@ -4,16 +4,18 @@ import android.app.Dialog;
 import android.content.Context;
 import android.content.Intent;
 import android.media.MediaPlayer;
+import android.media.RingtoneManager;
 import android.os.CountDownTimer;
 import android.os.Handler;
 import android.os.Looper;
-import android.provider.Settings;
 import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+import android.widget.ImageView;
+import android.widget.TextView;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GoogleApiAvailability;
@@ -47,6 +49,8 @@ public class TripActivity extends AppCompatActivity {
     private CountDownTimer alarmTimer;
 
     private Button pauseTripButton, resumeTripButton, endTripButton;
+    private ImageView pauseTripImageView;
+    private TextView durationTextView, durationLiteralTextView, alertTextView, alertLiteralTextView;
 
     private WokeFaceTracker faceTracker;
     private FaceDetector faceDetector;
@@ -58,7 +62,15 @@ public class TripActivity extends AppCompatActivity {
     private final FirebaseDatabase database = FirebaseDatabase.getInstance();
     private String tripStartTime;
     private String alarmStartTime;
+    private int alerts;
+    private long startTimeLong;
 
+    private ImageView noFaceBackground;
+    private TextView noFaceTextView;
+    private boolean showingNoFaceMessage;
+    private boolean inCalibrationPeriod;
+
+    private boolean isPaused;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         // To remove the title bar
@@ -69,12 +81,27 @@ public class TripActivity extends AppCompatActivity {
         pauseTripButton = (Button) findViewById(R.id.pauseTripButton);
         resumeTripButton = (Button) findViewById(R.id.resumeTripButton);
         endTripButton = (Button) findViewById(R.id.endTripButton);
+        pauseTripImageView = (ImageView) findViewById(R.id.pauseTripBackground);
+        durationTextView = (TextView) findViewById(R.id.durationTextView);
+        durationLiteralTextView = (TextView) findViewById(R.id.durationLiteralTextView);
+        alertTextView = (TextView) findViewById(R.id.alertsTextView);
+        alertLiteralTextView = (TextView) findViewById(R.id.alertsLiteralTextView);
+
+        noFaceBackground = (ImageView) findViewById(R.id.noFaceBackground);
+        noFaceTextView = (TextView) findViewById(R.id.noFaceTextView);
 
         // Initializes camera interface and surface texture view that shows camera feed
         cameraPreview = (CameraSourcePreview) findViewById(R.id.preview);
         graphicOverlay = (GraphicOverlay) findViewById(R.id.faceOverlay);
         cameraPreview.tripActivity = this;
         createCameraSource();
+
+        inCalibrationPeriod = true;
+        showingNoFaceMessage = false;
+
+        isPaused = false;
+        alerts = 0;
+        startTimeLong = System.currentTimeMillis();
 
         // Database write that a trip is starting
         FirebaseUser currentUser = firebaseAuth.getCurrentUser();
@@ -99,6 +126,29 @@ public class TripActivity extends AppCompatActivity {
         } else {
             Log.d(tag, "Couldn't write trip to Firebase because user isn't signed in");
         }
+    }
+
+    public void showNoFaceCalibrationMessage() {
+        Log.d(tag, "No face detected during calibration period");
+        showingNoFaceMessage = true;
+        noFaceTextView.setVisibility(View.VISIBLE);
+        noFaceBackground.setVisibility(View.VISIBLE);
+    }
+    public void removeNoFaceCalibrationMessage() {
+        Log.d(tag, "Face detected during calibration period");
+        showingNoFaceMessage = false;
+        noFaceTextView.setVisibility(View.INVISIBLE);
+        noFaceBackground.setVisibility(View.INVISIBLE);
+    }
+    public boolean isShowingNoFaceMessage() {
+        return showingNoFaceMessage;
+    }
+    public boolean isInCalibrationPeriod() {
+        return inCalibrationPeriod;
+    }
+    public void exitCalibrationPeriod() {
+        Log.d(tag, "EXITING calibration period");
+        inCalibrationPeriod = false;
     }
 
     @NonNull
@@ -170,7 +220,9 @@ public class TripActivity extends AppCompatActivity {
      */
     protected void onResume() {
         super.onResume();
-        startCameraSource();
+        if (!isPaused) {
+            startCameraSource();
+        }
     }
     @Override
     /**
@@ -192,9 +244,6 @@ public class TripActivity extends AppCompatActivity {
         if (cameraSource != null) {
             cameraSource.release();
         }
-//        if (cameraPreview != null) {
-//            cameraPreview.release();
-//        }
     }
 
     /**
@@ -202,9 +251,31 @@ public class TripActivity extends AppCompatActivity {
      * @param view "Pause Trip" button
      */
     public void onPauseClicked(View view) {
+        alertTextView.setText(Integer.toString(alerts));
+        // 3800 seconds --> 1:03:20
+        int hours = (int) (System.currentTimeMillis() - startTimeLong) / 1000 / 3600;
+        int seconds = (int) (System.currentTimeMillis() - startTimeLong) / 1000 % 60;
+        int minutes = (int) ((System.currentTimeMillis() - startTimeLong) / 1000 % 3600) / 60;
+
+        String duration = Long.toString(hours) + ":";
+        if (minutes < 10) {
+            duration += "0";
+        }
+        duration += minutes + ":";
+        if (seconds < 10) {
+            duration += "0";
+        }
+        duration += seconds;
+        durationTextView.setText(duration);
+
         pauseTripButton.setVisibility(View.INVISIBLE);
         resumeTripButton.setVisibility(View.VISIBLE);
-        endTripButton.setVisibility(View.VISIBLE);
+        pauseTripImageView.setVisibility(View.VISIBLE);
+        alertTextView.setVisibility(View.VISIBLE);
+        alertLiteralTextView.setVisibility(View.VISIBLE);
+        durationTextView.setVisibility(View.VISIBLE);
+        durationLiteralTextView.setVisibility(View.VISIBLE);
+        isPaused = true;
 
         if (cameraPreview != null) {
             cameraPreview.stop();
@@ -219,7 +290,12 @@ public class TripActivity extends AppCompatActivity {
     public void onResumeClicked(View view) {
         pauseTripButton.setVisibility(View.VISIBLE);
         resumeTripButton.setVisibility(View.INVISIBLE);
-        endTripButton.setVisibility(View.INVISIBLE);
+        pauseTripImageView.setVisibility(View.INVISIBLE);
+        alertTextView.setVisibility(View.INVISIBLE);
+        alertLiteralTextView.setVisibility(View.INVISIBLE);
+        durationTextView.setVisibility(View.INVISIBLE);
+        durationLiteralTextView.setVisibility(View.INVISIBLE);
+        isPaused = false;
 
         startCameraSource();
     }
@@ -286,9 +362,10 @@ public class TripActivity extends AppCompatActivity {
      */
     public void startAlarm() {
         Log.d(tag, "Call to Trip activity start alarm");
+        alerts++;
 
         // Initializes the media player to play sounds and starts it
-        mediaPlayer = MediaPlayer.create(this, Settings.System.DEFAULT_ALARM_ALERT_URI);
+        mediaPlayer = MediaPlayer.create(this, RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE));
         mediaPlayer.start();
 
         // In main thread, starts the timer to turn the alarm off after ALARM_DURATION_MILLISECONDS seconds
@@ -383,4 +460,11 @@ public class TripActivity extends AppCompatActivity {
     public MediaPlayer getMediaPlayer() {
         return mediaPlayer;
     }
+    public Button getPauseTripButton() {
+        return pauseTripButton;
+    }
+    public long getStartTimeLong() {
+        return startTimeLong;
+    }
+
 }

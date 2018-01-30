@@ -1,8 +1,11 @@
 package edu.illinois.finalproject;
 
 
+import android.content.Context;
+import android.content.SharedPreferences;
 import android.graphics.PointF;
 import android.media.MediaPlayer;
+import android.util.DisplayMetrics;
 import android.util.Log;
 
 import com.google.android.gms.vision.Tracker;
@@ -10,6 +13,7 @@ import com.google.android.gms.vision.face.Face;
 import com.google.android.gms.vision.face.FaceDetector;
 import com.google.android.gms.vision.face.Landmark;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -23,9 +27,12 @@ import edu.illinois.finalproject.camera.GraphicOverlay;
 // https://github.com/googlesamples/android-vision/blob/master/visionSamples/googly-eyes
 
 public class WokeFaceTracker extends Tracker<Face> {
-    private static final float EYES_CLOSED_THRESHOLD = 0.35f;
-    private static final int EYES_CLOSED_ALARM_DELAY = 1000;
-    private static final int FACE_OUT_ALARM_DELAY = 3000;
+    private float leftEyeClosedThreshold = 0.35f;
+    private float rightEyeClosedThreshold = 0.35f;
+    private int eyesClosedAlarmDelay = 1000;
+    private int faceOutAlarmDelay = 3000;
+    private static final int CALIBRATION_FRAMES_TO_KEEP = 150;
+    private static final int NORMAL_FRAMES_TO_KEEP = 8;
     private final String tag = "WokeFaceTracker";
 
     private GraphicOverlay graphicOverlay;
@@ -38,12 +45,29 @@ public class WokeFaceTracker extends Tracker<Face> {
 
     private long eyesClosedStartTime = 0;
     private boolean setOffAlarm = false;
+    private boolean alertForMissingEyes = true;
 
+    private boolean finishedLoadingScreen = false;
+
+    private ArrayList<WokeFrame> recentFrames = new ArrayList<>();
     private TripActivity tripActivity;
 
     WokeFaceTracker(GraphicOverlay overlay, TripActivity activity) {
         graphicOverlay = overlay;
         tripActivity = activity;
+        eyesGraphic = new WokeEyesGraphic(graphicOverlay, tripActivity);
+
+        DisplayMetrics displayMetrics = new DisplayMetrics();
+        tripActivity.getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
+        eyesGraphic.deviceWidth = displayMetrics.widthPixels;
+
+        SharedPreferences sharedPref = tripActivity.getPreferences(Context.MODE_PRIVATE);
+        if (sharedPref.contains("AlertDelay")) {
+            eyesClosedAlarmDelay = sharedPref.getInt("AlarmDelay", 1000);
+        }
+        if (sharedPref.contains("AlertForMissingEyes")) {
+            alertForMissingEyes = sharedPref.getBoolean("AlertForMissingEyes", true);
+        }
     }
 
     @Override
@@ -51,7 +75,7 @@ public class WokeFaceTracker extends Tracker<Face> {
      * Called when a new face is detected. Initializes eyesGraphic which contains the overlaid bounding boxes
      */
     public void onNewItem(int id, Face face) {
-        eyesGraphic = new WokeEyesGraphic(graphicOverlay);
+//        eyesGraphic = new WokeEyesGraphic(graphicOverlay);
     }
 
     @Override
@@ -66,61 +90,100 @@ public class WokeFaceTracker extends Tracker<Face> {
 
         updatePreviousProportions(face);
 
+        // Adds the frame to the list of recent frames
+        WokeFrame frame = new WokeFrame(System.currentTimeMillis(), true,
+                face.getIsLeftEyeOpenProbability(), face.getIsRightEyeOpenProbability());
+        recentFrames.add(frame);
+
         PointF leftPosition = getLandmarkPosition(face, Landmark.LEFT_EYE);
         PointF rightPosition = getLandmarkPosition(face, Landmark.RIGHT_EYE);
 
+        // Finds the average eye-open probabilities from recentFrames
+        float avgRecentLeftOpenProb = 0.0f;
+        float avgRecentRightOpenProb = 0.0f;
+        for (WokeFrame wokeFrame : recentFrames) {
+            avgRecentLeftOpenProb += wokeFrame.getLeftOpenProb();
+            avgRecentRightOpenProb += wokeFrame.getRightOpenProb();
+        }
+        avgRecentLeftOpenProb /= recentFrames.size();
+        avgRecentRightOpenProb /= recentFrames.size();
+        System.out.println("LeftOpen: " + avgRecentLeftOpenProb);
+        System.out.println("RightOpen: " + avgRecentLeftOpenProb);
+
         float leftOpenScore = face.getIsLeftEyeOpenProbability();
-        boolean leftOpen;
+        float rightOpenScore = face.getIsRightEyeOpenProbability();
+        boolean leftOpen, rightOpen;
         if (leftOpenScore == Face.UNCOMPUTED_PROBABILITY) {
             leftOpen = lastLeftOpen;
         } else {
-            leftOpen = (leftOpenScore > EYES_CLOSED_THRESHOLD);
+            leftOpen = (avgRecentLeftOpenProb > leftEyeClosedThreshold);
             lastLeftOpen = leftOpen;
         }
-
-        float rightOpenScore = face.getIsRightEyeOpenProbability();
-        boolean rightOpen;
         if (rightOpenScore == Face.UNCOMPUTED_PROBABILITY) {
             rightOpen = lastRightOpen;
         } else {
-            rightOpen = (rightOpenScore > EYES_CLOSED_THRESHOLD);
+            rightOpen = (avgRecentRightOpenProb > rightEyeClosedThreshold);
             lastRightOpen = rightOpen;
         }
-        Log.d(tag, leftPosition.toString());
-        Log.d(tag, rightPosition.toString());
-        Log.d(tag, "Left open: " + leftOpen);
-        Log.d(tag, "Right open: " + rightOpen);
 
+        if (tripActivity.isInCalibrationPeriod()) {
 
-        Log.d(tag, "Eyes closed start time: " + eyesClosedStartTime);
+            // Checks if there have been 60 consecutive frames with a face; if so, exit calibration period
+            if (recentFrames.size() >= CALIBRATION_FRAMES_TO_KEEP) {
+                eyesGraphic.inCalibrationMode = false;
+                tripActivity.exitCalibrationPeriod();
 
-        MediaPlayer mediaPlayer = tripActivity.getMediaPlayer();
-        if (mediaPlayer != null) {
-            Log.d(tag, "Media player playing: " + mediaPlayer.isPlaying());
-        } else {
-            Log.d(tag, "Media player null");
-        }
+                // Calculates thresholds for eyes being closed relative to standard open-eye values
+                leftEyeClosedThreshold = 0;
+                rightEyeClosedThreshold = 0;
+                for (WokeFrame wokeFrame : recentFrames) {
+                    leftEyeClosedThreshold += wokeFrame.getLeftOpenProb();
+                    rightEyeClosedThreshold += wokeFrame.getRightOpenProb();
+                }
+                leftEyeClosedThreshold /= recentFrames.size();
+                rightEyeClosedThreshold /= recentFrames.size();
 
+                leftEyeClosedThreshold *= 0.5;
+                rightEyeClosedThreshold *= 0.5;
+                System.out.println("LEFT THRESHOLD: " + leftEyeClosedThreshold);
+                System.out.println("RIGHT THRESHOLD: " + rightEyeClosedThreshold);
 
-        if (!leftOpen && !rightOpen) {
-            // Starts the eyes closed "timer" because eyes need to be closed for 1 second for an alarm to go off
-            if (eyesClosedStartTime == 0 && (mediaPlayer == null || !mediaPlayer.isPlaying())) {
-                Log.d(tag, "Starting eyes closed timer");
-                eyesClosedStartTime = System.currentTimeMillis();
-            } else if (System.currentTimeMillis() > eyesClosedStartTime + EYES_CLOSED_ALARM_DELAY && !setOffAlarm &&
-                        (mediaPlayer == null || !mediaPlayer.isPlaying())) {
-                Log.d(tag, "Starting alarm");
-
-                // setOffAlarm exists to ensure another alarm doesn't go off after the first one ends
-                setOffAlarm = true;
-                tripActivity.startAlarm();
+                recentFrames.clear();
             }
         } else {
-            Log.d(tag, "Stopping alarm and eyes closed timer");
-            eyesClosedStartTime = 0;
-            setOffAlarm = false;
-            if (mediaPlayer != null && mediaPlayer.isPlaying()) {
-                tripActivity.stopAlarm();
+            // If not in calibration mode, start only storing the latest 10 frames
+            if (recentFrames.size() >= NORMAL_FRAMES_TO_KEEP) {
+                recentFrames.remove(0);
+            }
+
+            MediaPlayer mediaPlayer = tripActivity.getMediaPlayer();
+            if (mediaPlayer != null) {
+                Log.d(tag, "Media player playing: " + mediaPlayer.isPlaying());
+            } else {
+                Log.d(tag, "Media player null");
+            }
+
+            if (!leftOpen && !rightOpen) {
+                // Starts the eyes closed "timer" because eyes need to be closed for 1 second for an alarm to go off
+                if (eyesClosedStartTime == 0 && (mediaPlayer == null || !mediaPlayer.isPlaying())) {
+                    Log.d(tag, "Starting eyes closed timer");
+                    eyesClosedStartTime = System.currentTimeMillis();
+                } else if (System.currentTimeMillis() > eyesClosedStartTime + eyesClosedAlarmDelay && !setOffAlarm &&
+                        (mediaPlayer == null || !mediaPlayer.isPlaying())) {
+
+                    Log.d(tag, "Starting alarm");
+
+                    // setOffAlarm exists to ensure another alarm doesn't go off after the first one ends
+                    setOffAlarm = true;
+                    tripActivity.startAlarm();
+                }
+            } else {
+                Log.d(tag, "Stopping alarm and eyes closed timer");
+                eyesClosedStartTime = 0;
+                setOffAlarm = false;
+                if (mediaPlayer != null && mediaPlayer.isPlaying()) {
+                    tripActivity.stopAlarm();
+                }
             }
         }
 
@@ -133,22 +196,43 @@ public class WokeFaceTracker extends Tracker<Face> {
      * Called when the FaceTracker doesn't detect a face; this sets off an alarm, as if the eyes were closed
      */
     public void onMissing(FaceDetector.Detections<Face> detectionResults) {
-        MediaPlayer mediaPlayer = tripActivity.getMediaPlayer();
-
-        // Starts the eyes closed "timer" because eyes need to be closed for 1 second for an alarm to go off
-        if (eyesClosedStartTime == 0 && (mediaPlayer == null || !mediaPlayer.isPlaying())) {
-            Log.d(tag, "Starting eyes closed timer");
-            eyesClosedStartTime = System.currentTimeMillis();
-        } else if (System.currentTimeMillis() > eyesClosedStartTime + FACE_OUT_ALARM_DELAY && !setOffAlarm &&
-                (mediaPlayer == null || !mediaPlayer.isPlaying())) {
-            Log.d(tag, "Starting alarm");
-
-            // setOffAlarm exists to ensure another alarm doesn't go off after the first one ends
-            setOffAlarm = true;
-            tripActivity.startAlarm();
+        // To prevent the "eyes not detected" message from showing right when a trip starts
+        if (finishedLoadingScreen) {
+            graphicOverlay.add(eyesGraphic);
+            eyesGraphic.updateEyesMissingText();
+        } else if (System.currentTimeMillis() - tripActivity.getStartTimeLong() > 200) {
+            finishedLoadingScreen = true;
         }
 
-        graphicOverlay.remove(eyesGraphic);
+        if (tripActivity.isInCalibrationPeriod()) {
+            // Clear the recent frames where the face was detected
+            if (recentFrames.size() > 0) {
+                recentFrames.clear();
+            }
+            return;
+//            if (!tripActivity.isShowingNoFaceMessage()) {
+//                tripActivity.showNoFaceCalibrationMessage();
+//            }
+        }
+
+        if (alertForMissingEyes) {
+            MediaPlayer mediaPlayer = tripActivity.getMediaPlayer();
+
+            // Starts the eyes closed "timer" because eyes need to be closed for 1 second for an alarm to go off
+            if (eyesClosedStartTime == 0 && (mediaPlayer == null || !mediaPlayer.isPlaying())) {
+                Log.d(tag, "Starting eyes closed timer");
+                eyesClosedStartTime = System.currentTimeMillis();
+            } else if (System.currentTimeMillis() > eyesClosedStartTime + faceOutAlarmDelay && !setOffAlarm &&
+                    (mediaPlayer == null || !mediaPlayer.isPlaying())) {
+                Log.d(tag, "Starting alarm");
+
+                // startAlarm exists to ensure another alarm doesn't go off after the first one ends
+                setOffAlarm = true;
+                tripActivity.startAlarm();
+            }
+        }
+
+//        graphicOverlay.remove(eyesGraphic);
     }
 
     @Override

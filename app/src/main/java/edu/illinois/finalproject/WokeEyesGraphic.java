@@ -5,6 +5,8 @@ import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.PointF;
 import android.graphics.Rect;
+import android.graphics.Typeface;
+import android.util.Log;
 
 import edu.illinois.finalproject.camera.GraphicOverlay;
 
@@ -17,20 +19,40 @@ import edu.illinois.finalproject.camera.GraphicOverlay;
 
 public class WokeEyesGraphic extends GraphicOverlay.Graphic {
     private static final float EYE_RADIUS_PROPORTION = 0.45f;
-    private Paint eyePaint;
+    private Paint eyePaint, textPaint, noFaceBGPaint;
+    public int deviceWidth;
+    private int textXLocation = 0;
+
+    public volatile boolean inCalibrationMode;
 
     private volatile PointF leftPosition;
     private volatile PointF rightPosition;
     private volatile boolean leftOpen;
     private volatile boolean rightOpen;
+    private static String tag = "WokeEyesGraphic";
 
-    public WokeEyesGraphic(GraphicOverlay overlay) {
+    private TripActivity tripActivity;
+
+    public WokeEyesGraphic(GraphicOverlay overlay, TripActivity activity) {
         super(overlay);
+
+        inCalibrationMode = true;
+        textPaint = new Paint();
+        textPaint.setColor(Color.WHITE);
+        textPaint.setTextSize(40);
+        textPaint.setTextAlign(Paint.Align.CENTER);
+        textPaint.setTypeface(Typeface.create("sans-serif", Typeface.NORMAL));
+
+        noFaceBGPaint = new Paint();
+        noFaceBGPaint.setColor(Color.RED);
+        noFaceBGPaint.setAlpha((int)(255 * 0.5));
 
         eyePaint = new Paint();
         eyePaint.setColor(Color.WHITE);
         eyePaint.setStrokeWidth(7);
         eyePaint.setStyle(Paint.Style.STROKE);
+
+        tripActivity = activity;
     }
 
     /**
@@ -51,6 +73,12 @@ public class WokeEyesGraphic extends GraphicOverlay.Graphic {
         postInvalidate();
     }
 
+    void updateEyesMissingText() {
+        leftPosition = null;
+        rightPosition = null;
+        postInvalidate();
+    }
+
     @Override
     /**
      * Prepares for drawing the bounding boxes and calls the method that actually draws them; also calculates what
@@ -61,7 +89,16 @@ public class WokeEyesGraphic extends GraphicOverlay.Graphic {
     public void draw(Canvas canvas) {
         PointF detectLeftPosition = leftPosition;
         PointF detectRightPosition = rightPosition;
+        Log.d(tag, "Attempting to draw text for eyes missing " + Integer.toString(tripActivity.getPauseTripButton().getWidth()));
         if ((detectLeftPosition == null) || (detectRightPosition == null)) {
+//            if (inCalibrationMode) {
+                if (textXLocation == 0) {
+                    textXLocation = (canvas.getWidth() / 2);
+                }
+
+                canvas.drawRect(0, 0, deviceWidth * 2, 100, noFaceBGPaint);
+                canvas.drawText("Eyes not detected. Please reposition your device", textXLocation, 70, textPaint);
+//            }
             return;
         }
 
@@ -77,6 +114,7 @@ public class WokeEyesGraphic extends GraphicOverlay.Graphic {
         // Draws both eyes given positions and whether they're open
         drawEye(canvas, leftPosition, eyeRadius, leftOpen);
         drawEye(canvas, rightPosition, eyeRadius, rightOpen);
+
     }
 
     /**

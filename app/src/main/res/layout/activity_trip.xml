@@ -6,81 +6,48 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context="edu.illinois.finalproject.TripActivity">
-
     <Button
         android:id="@+id/pauseTripButton"
-        android:layout_width="match_parent"
+        android:layout_width="0dp"
         android:layout_height="84dp"
-        android:background="@mipmap/pausebutton"
+        android:background="@color/colorAccent"
         android:fontFamily="sans-serif"
         android:onClick="onPauseClicked"
         android:text="@string/pause_trip_literal_text"
         android:textColor="@color/common_google_signin_btn_text_dark_default"
         android:textSize="24sp"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.0"
-        app:layout_constraintStart_toStartOf="parent"/>
-
-    <Button
-        android:id="@+id/endTripButton"
-        android:layout_width="match_parent"
-        android:layout_height="84dp"
-        android:background="@mipmap/endbutton"
-        android:fontFamily="sans-serif"
-        android:onClick="onEndClicked"
-        android:text="@string/end_trip_literal_text"
-        android:textColor="@color/common_google_signin_btn_text_dark_default"
-        android:textSize="24sp"
-        android:visibility="invisible"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.0"
+        app:layout_constraintEnd_toStartOf="@+id/guideline"
         app:layout_constraintStart_toStartOf="parent"/>
 
     <Button
         android:id="@+id/resumeTripButton"
         android:layout_width="0dp"
-        android:layout_height="0dp"
-        android:background="@mipmap/continuebutton"
+        android:layout_height="84dp"
+        android:background="@color/fui_bgFacebook"
         android:fontFamily="sans-serif"
         android:onClick="onResumeClicked"
         android:text="@string/resume_trip_literal_text"
-        android:textSize="36sp"
+        android:textColor="@color/common_google_signin_btn_text_dark_default"
+        android:textSize="24sp"
         android:visibility="invisible"
-        app:layout_constraintBottom_toTopOf="@+id/endTripButton"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="1.0"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="1.0"/>
-
-    <TextView
-        android:id="@+id/continueTripTextView"
-        android:layout_width="252dp"
-        android:layout_height="43dp"
-        android:layout_marginBottom="50dp"
-        android:layout_marginEnd="8dp"
-        android:layout_marginStart="8dp"
-        android:text="@string/continue_trip_literal_text"
-        android:textAlignment="center"
-        android:textColor="@color/common_google_signin_btn_text_dark_focused"
-        android:textSize="30sp"
-        android:visibility="invisible"
-        app:layout_constraintBottom_toBottomOf="@+id/resumeTripButton"
-        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toStartOf="@+id/guideline"
         app:layout_constraintStart_toStartOf="parent"/>
 
-    <TextureView
-        android:id="@+id/mainTextureView"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        app:layout_constraintBottom_toBottomOf="@+id/resumeTripButton"
+    <Button
+        android:id="@+id/endTripButton"
+        android:layout_width="0dp"
+        android:layout_height="84dp"
+        android:background="@color/colorRed"
+        android:fontFamily="sans-serif"
+        android:onClick="onEndClicked"
+        android:text="@string/end_trip_literal_text"
+        android:textColor="@color/common_google_signin_btn_text_dark_default"
+        android:textSize="24sp"
+        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.0"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="1.0"/>
+        app:layout_constraintStart_toStartOf="@+id/guideline"/>
 
     <edu.illinois.finalproject.camera.CameraSourcePreview
         android:id="@+id/preview"
@@ -90,19 +57,119 @@
         <edu.illinois.finalproject.camera.GraphicOverlay
             android:id="@+id/faceOverlay"
             android:layout_width="match_parent"
-            android:layout_height="match_parent" />
+            android:layout_height="match_parent"/>
 
     </edu.illinois.finalproject.camera.CameraSourcePreview>
 
-    <Button
-        android:id="@+id/settingsButton"
-        android:layout_width="35dp"
-        android:layout_height="35dp"
-        android:layout_marginEnd="12dp"
-        android:layout_marginTop="12dp"
-        android:background="@mipmap/menuicon"
-        android:onClick="onSettingsClicked"
+    <ImageView
+        android:id="@+id/noFaceBackground"
+        android:layout_width="0dp"
+        android:layout_height="70dp"
+        android:alpha="0.7"
+        android:animateLayoutChanges="true"
+        android:background="@mipmap/endbutton"
+        android:visibility="invisible"
         app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"/>
+
+    <TextView
+        android:id="@+id/noFaceTextView"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="8dp"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="10dp"
+        android:animateLayoutChanges="true"
+        android:text="Face not detected. Please reposition\n your device"
+        android:textAlignment="center"
+        android:textColor="@color/cardview_light_background"
+        android:textSize="19sp"
+        android:visibility="invisible"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"/>
+
+    <android.support.constraint.Guideline
+        android:id="@+id/guideline"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        app:layout_constraintGuide_percent="0.5"/>
+
+
+    <ImageView
+        android:id="@+id/pauseTripBackground"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:alpha="0.95"
+        android:animateLayoutChanges="true"
+        android:scaleType="fitXY"
+        android:visibility="invisible"
+        app:layout_constraintBottom_toTopOf="@+id/resumeTripButton"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:srcCompat="@color/cast_intro_overlay_background_color"/>
+
+    <TextView
+        android:id="@+id/durationTextView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="8dp"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="60dp"
+        android:fontFamily="sans-serif"
+        android:text="1:11:18"
+        android:textColor="@color/cardview_light_background"
+        android:textSize="95sp"
+        android:visibility="invisible"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"/>
+
+    <TextView
+        android:id="@+id/durationLiteralTextView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="8dp"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="120dp"
+        android:text="Session Duration"
+        android:textColor="@color/lightPurple"
+        android:textSize="24sp"
+        android:visibility="invisible"
+        app:layout_constraintEnd_toEndOf="@+id/durationTextView"
+        app:layout_constraintStart_toStartOf="@+id/durationTextView"
+        app:layout_constraintTop_toTopOf="@+id/durationTextView"/>
+
+    <TextView
+        android:id="@+id/alertsTextView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="8dp"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="40dp"
+        android:text="4"
+        android:textColor="@color/cardview_light_background"
+        android:textSize="50sp"
+        android:visibility="invisible"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/durationLiteralTextView"/>
+
+    <TextView
+        android:id="@+id/alertsLiteralTextView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="65dp"
+        android:text="Alerts"
+        android:textColor="@color/lightPurple"
+        android:textSize="24sp"
+        android:visibility="invisible"
+        app:layout_constraintEnd_toEndOf="@+id/alertsTextView"
+        app:layout_constraintStart_toStartOf="@+id/alertsTextView"
+        app:layout_constraintTop_toTopOf="@+id/alertsTextView"/>
+
 
 </android.support.constraint.ConstraintLayout>

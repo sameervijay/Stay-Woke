@@ -87,7 +87,7 @@
     <string name="noUserSignInText">Tap \"Sign In\" to access your account</string>
     <string name="sign_out_literal_text">Sign Out</string>
     <string name="link_account_literal_text">Link Account</string>
-    <string name="duration_literal_text">Duration:</string>
+    <string name="duration_literal_text">Duration: </string>
     <string name="alarms_literal_text">Alarms Set Off:</string>
     <string name="linked_email_literal_text">Linked email address</string>
     <string name="linked_children_literal_text">Linked Account</string>
@@ -98,17 +98,17 @@
     <string name="shadow_email_address">Recipient Email Address</string>
     <string name="send_link_request_literal_text">Send Link Request</string>
     <string name="background_description">background view for linked account screen</string>
-    <string name="pause_trip_literal_text">Pause Trip</string>
-    <string name="end_trip_literal_text">End Trip</string>
-    <string name="resume_trip_literal_text">Resume Trip</string>
+    <string name="pause_trip_literal_text">Pause</string>
+    <string name="end_trip_literal_text">End</string>
+    <string name="resume_trip_literal_text">Resume</string>
     <string name="continue_trip_literal_text">CONTINUE TRIP</string>
     <string name="start_trip_literal_text">Start Trip</string>
-    <string name="tap_car_to_start_trip_literal_text">Tap Car to Start Trip</string>
+    <string name="tap_camera_to_start_literal_text">Tap Camera to Start</string>
     <string name="app_title_stay_woke">Stay Woke</string>
     <string name="last_trip_text_literal">Last Trip:</string>
-    <string name="duration_text_literal">Duration:</string>
-    <string name="minute_text_literal">minute</string>
-    <string name="minutes_text_literal">minutes</string>
+    <string name="duration_text_literal">Duration: </string>
+    <string name="minute_text_literal"> minute</string>
+    <string name="minutes_text_literal"> minutes</string>
     <string name="alarms_text_literal">Alarms:</string>
     <string name="sign_in_failed_display_text">The sign in attempt failed. Please try again</string>
 </resources>
